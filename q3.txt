@@ -1,0 +1,48 @@
+CREATE TABLE recs(
+	minX int,
+	maxX int,
+	minY int,
+	maxY int
+);
+
+INSERT INTO recs(minX,maxX,minY,maxY) VALUES(2,5,23,25);
+INSERT INTO recs(minX,maxX,minY,maxY) VALUES(3,7,17,20);
+INSERT INTO recs(minX,maxX,minY,maxY) VALUES(1,4,11,13);
+INSERT INTO recs(minX,maxX,minY,maxY) VALUES(1,4,0,3);
+INSERT INTO recs(minX,maxX,minY,maxY) VALUES(6,9,21,24);
+INSERT INTO recs(minX,maxX,minY,maxY) VALUES(7,9,15,20);
+INSERT INTO recs(minX,maxX,minY,maxY) VALUES(6,13,3,8);
+INSERT INTO recs(minX,maxX,minY,maxY) VALUES(17,20,9,22);
+INSERT INTO recs(minX,maxX,minY,maxY) VALUES(19,24,9,12);
+INSERT INTO recs(minX,maxX,minY,maxY) VALUES(19,23,6,8);
+INSERT INTO recs(minX,maxX,minY,maxY) VALUES(21,26,21,25);
+INSERT INTO recs(minX,maxX,minY,maxY) VALUES(20,30,15,17);
+INSERT INTO recs(minX,maxX,minY,maxY) VALUES(25,28,12,16);
+INSERT INTO recs(minX,maxX,minY,maxY) VALUES(13,17,19,23);
+
+CREATE VIRTUAL TABLE recs_rtree USING rtree(
+	id int,
+	minX,maxX,
+	minY,maxY
+);
+
+INSERT INTO recs_rtree(minX, maxX, minY, maxY)
+SELECT
+	minX, maxX,
+	minY, maxY
+FROM recs;
+
+-- mbrs of objects
+SELECT * from recs_rtree;
+
+-- mbrs of nodes
+SELECT i.nodeno, min(minX), max(maxX), min(minY), max(maxY)
+FROM recs_rtree r, recs_rtree_rowid i
+WHERE r.id=i.rowid
+GROUP BY i.nodeno
+
+
+
+-- The R-tree in this SQLITE database is different because the max fill (or M) must be greater than the m and M assigned to us in question 2
+-- All of the rectangles can be filled into the first node.
+-- This is because ideally you want each node to be one page size to reduce reading
