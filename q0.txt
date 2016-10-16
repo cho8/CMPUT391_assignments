@@ -1,3 +1,5 @@
+DROP TABLE IF EXIST poi_tag;
+DROP TABLE IF EXIST poi;
 
 CREATE TABLE poi_tag(
     id int,
