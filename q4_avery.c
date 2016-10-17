@@ -1,4 +1,5 @@
 //Avery Tan
+//CHRISTINA HO
 //assignment1 CMPUT391
 #include <stdio.h>
 #include <sqlite3.h>
@@ -30,9 +31,9 @@ int main(int argc, char **argv){
   char sql_statement1[] = "SELECT pt.id "\
                             "FROM poi_tag pt, poi_rtree pi "\
                                   "WHERE pt.id=pi.id "\
-                                    "AND pi.minX>= ";
-                                //  "AND pt.key = \"class\" "\
-                                //  "AND pt.value LIKE \"c%%\" "\
+                                  "AND pt.key = \"class\" "\
+                                  "AND pt.value LIKE \"c%%\" "\
+                                  "AND pi.minX>= ";
 
 
   char sql_statement2[] =" AND pi.maxX<= ";
