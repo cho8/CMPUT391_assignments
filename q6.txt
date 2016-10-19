@@ -21,3 +21,11 @@ Average runtime without rtree: 0.010246 s
 Parameter l: 125
 Average runtime with rtree: 0.470497 ms
 Average runtime without rtree: 0.010478 s
+
+
+
+
+For these results, it's expected since for a search using a non rtree index structure, we expect
+that the database will go through every single record irregardless of the size of l
+
+However for the rtree index search, the nodes visited would depend on the size of l as we can see from our table of results. So as expected, this time increases with the increased value of l since it would mean more records would meet the condition.
