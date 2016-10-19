@@ -35,7 +35,7 @@ int main(int argc, char **argv){
                                   "AND pt.value = \"";
                                   
                                   
-  char sql_statement2[] =" \" AND pi.minX>= ";
+  char sql_statement2[] ="\" AND pi.minX>= ";
 
   char sql_statement3[] =" AND pi.maxX<= ";
 
