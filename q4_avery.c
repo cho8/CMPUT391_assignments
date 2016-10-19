@@ -32,10 +32,10 @@ int main(int argc, char **argv){
                             "FROM poi_tag pt, poi_rtree pi "\
                                   "WHERE pt.id=pi.id "\
                                   "AND pt.key = \"class\" "\
-                                  "AND pt.value = ";
+                                  "AND pt.value = \"";
                                   
                                   
-  char sql_statement2[] =" AND pi.minX>= ";
+  char sql_statement2[] =" \" AND pi.minX>= ";
 
   char sql_statement3[] =" AND pi.maxX<= ";
 
