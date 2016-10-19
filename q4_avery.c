@@ -32,15 +32,15 @@ int main(int argc, char **argv){
                             "FROM poi_tag pt, poi_rtree pi "\
                                   "WHERE pt.id=pi.id "\
                                   "AND pt.key = \"class\" "\
-                                  "AND pt.value LIKE \"c%%\" "\
-                                  "AND pi.minX>= ";
+                                  "AND pt.value = ";
+                                  
+  char sql_statement2[] =" AND pi.minX>= ";
 
+  char sql_statement3[] =" AND pi.maxX<= ";
 
-  char sql_statement2[] =" AND pi.maxX<= ";
+  char sql_statement4[] =" AND pi.minY>= ";
 
-  char sql_statement3[] =" AND pi.minY>= ";
-
-  char sql_statement4[] =" AND pi.maxY<= ";
+  char sql_statement5[] =" AND pi.maxY<= ";
 
 
   //assembling our query
@@ -52,6 +52,8 @@ int main(int argc, char **argv){
   strncat(sql_statement, argv[3], sizeof(argv[3]));
   strncat(sql_statement, sql_statement4, sizeof(sql_statement4)/sizeof(char));
   strncat(sql_statement, argv[4], sizeof(argv[4]));
+  strncat(sql_statement, sql_statement5, sizeof(sql_statement5)/sizeof(char));
+  strncat(sql_statement, argv[5], sizeof(argv[5]));
 
   printf("%s",sql_statement);
   int rc;
