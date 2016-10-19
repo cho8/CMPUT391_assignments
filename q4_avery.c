@@ -16,7 +16,7 @@ int main(int argc, char **argv){
   //container for assembling our query
   char sql_statement[999];
 
-  if( argc!=5 ){
+  if( argc!=6 ){
     	fprintf(stderr, "Usage: %s <x1> <x2> <y1> <y2>\n", argv[0]);
     	return(1);
   }
