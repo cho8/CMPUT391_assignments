@@ -1,10 +1,57 @@
 //Avery Tan
-//Christina Ho
-//assignment2 CMPUT391
+//CHRISTINA HO
+//assignment1 CMPUT391
 #include <stdio.h>
 #include <sqlite3.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
+
+//calculating from the centre of the object ((x1+x2)/2, (y1+y2)/2)
+double mindist(double p1, double p2, double s1, double s2, double t1, double t2){
+  double r1, r2
+  if (p1 < s1){
+    r1 = s1;
+  }
+  else if(p1>t1){
+    r1 = t1;
+  }
+  else {
+    r1 = p1;
+  }
+  if (p2 < s2){
+    r2 = s2;
+  }
+  else if(p2>t2){
+    r2 = t2;
+  }
+  else {
+    r2 = p2;
+  }
+  return pow((p2-r2),2) + pow((p1 - r1),2); 
+}
+
+double rmCalc(double s,double p, double t){
+  if (p<((s+t)/2)){
+    return s; 
+  }
+  else {
+    return t;
+  }
+}
+
+double minmax(double p1, double p2, double s1, double s2, double t1, double t2){
+  double number1 = (pow(p1 - rmCalc(s1,p1,t1)),2) + pow(p2 - rmCalc(s2,p2,t2),2);
+  double number2 = (pow(p2 - rmCalc(s2,p2,t2)),2) + pow(p1 - rmCalc(s1,p1,t1),2);
+  if (number1 < number2){
+    return number1;
+  }
+  else {
+    return number2;
+  }
+
+}
+
 
 int main(int argc, char **argv){
 
@@ -16,7 +63,7 @@ int main(int argc, char **argv){
   //container for assembling our query
   char sql_statement[999];
 
-  if( argc!=6 ){
+  if( argc!=1 ){
     	fprintf(stderr, "Usage: %s <x1> <x2> <y1> <y2>\n", argv[0]);
     	return(1);
   }
@@ -28,33 +75,13 @@ int main(int argc, char **argv){
   code as a parameter and produces the equivalent answer of question 8
   above for that airport.
   */
-  char sql_statement1[] = "SELECT pt.id "\
-                            "FROM poi_tag pt, poi_rtree pi "\
-                                  "WHERE pt.id=pi.id "\
-                                  "AND pt.key = \"class\" "\
-                                  "AND pt.value = \"";
-                                  
-                                  
-  char sql_statement2[] ="\" AND pi.minX>= ";
+  char sql_statement1[] = "SELECT rtreenode(2, data) FROM poi_rtree_node where nodeno = 1;";
 
-  char sql_statement3[] =" AND pi.maxX<= ";
-
-  char sql_statement4[] =" AND pi.minY>= ";
-
-  char sql_statement5[] =" AND pi.maxY<= ";
 
 
   //assembling our query
   strcpy(sql_statement, sql_statement1);
-  strncat(sql_statement, argv[1], sizeof(argv[1]));
-  strncat(sql_statement, sql_statement2, sizeof(sql_statement2)/sizeof(char));
-  strncat(sql_statement, argv[2], sizeof(argv[2]));
-  strncat(sql_statement, sql_statement3, sizeof(sql_statement3)/sizeof(char));
-  strncat(sql_statement, argv[3], sizeof(argv[3]));
-  strncat(sql_statement, sql_statement4, sizeof(sql_statement4)/sizeof(char));
-  strncat(sql_statement, argv[4], sizeof(argv[4]));
-  strncat(sql_statement, sql_statement5, sizeof(sql_statement5)/sizeof(char));
-  strncat(sql_statement, argv[5], sizeof(argv[5]));
+
 
   printf("%s",sql_statement);
   int rc;
@@ -85,5 +112,4 @@ int main(int argc, char **argv){
   }
 
   sqlite3_finalize(stmt); //always finalize a statement
-  sqlite3_close(db);
 }
