@@ -44,5 +44,4 @@ GROUP BY i.nodeno
 
 
 -- The R-tree in this SQLITE database is different because the max fill (or M) must be greater than the m and M assigned to us in question 2
--- All of the rectangles can be filled into the first node.
--- This is because ideally you want each node to be one page size to reduce reading
+-- All of the rectangles can be filled into the first node, which suggests that the M for sqlite's rtrees are definitely greater than 4.

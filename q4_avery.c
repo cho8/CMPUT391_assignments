@@ -1,6 +1,6 @@
 //Avery Tan
-//CHRISTINA HO
-//assignment1 CMPUT391
+//Christina Ho
+//assignment2 CMPUT391
 #include <stdio.h>
 #include <sqlite3.h>
 #include <stdlib.h>
@@ -82,4 +82,5 @@ int main(int argc, char **argv){
   }
 
   sqlite3_finalize(stmt); //always finalize a statement
+  sqlite3_close(db);
 }

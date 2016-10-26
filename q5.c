@@ -1,5 +1,6 @@
 //Avery Tan
-//assignment1 CMPUT391
+//Christina Ho
+//assignment2 CMPUT391
 #include <stdio.h>
 #include <sqlite3.h>
 #include <stdlib.h>
@@ -100,6 +101,7 @@ int main(int argc, char **argv){
       // add current execution time to total
       index_times[i] += (double)(index_end-index_begin);
       printf("%d %d %d %lu %f\n",i, xarry[i], yarry[i],index_end-index_begin, index_times[i]);
+      sqlite3_free(sql_index);
 
     }
     // average total execution times
