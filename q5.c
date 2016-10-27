@@ -56,11 +56,12 @@ int main(int argc, char **argv){
   double rtree_times[100]={0};
   double index_times[100]={0};
 
-  // 100 bounding squares
-  for (int i=0; i<100; i++) {
+  // run each query rectangle 20 times for rtree and standard indexes
+  for (int j=0; j<20; j++) {
+      // 100 bounding squares
+      for (int i=0; i<100; i++) {
 
-    // run each query rectangle 20 times for rtree and standard indexes
-    for (int j=0; j<20; j++) {
+
 
       //rtree execution
       char *sql = sqlite3_mprintf( "SELECT id "\
@@ -100,29 +101,29 @@ int main(int argc, char **argv){
 
       // add current execution time to total
       index_times[i] += (double)(index_end-index_begin);
-      printf("%d %d %d %lu %f\n",i, xarry[i], yarry[i],index_end-index_begin, index_times[i]);
+      // printf("%d %d %d %lu %f\n",i, xarry[i], yarry[i],index_end-index_begin, index_times[i]);
       sqlite3_free(sql_index);
 
     }
     // average total execution times
-    rtree_times[i] = rtree_times[i]/20;
+    rtree_times[j] = rtree_times[j]/100;
     // average total execution times
-    index_times[i] = index_times[i]/20;
+    index_times[j] = index_times[j]/100;
 
     // printf("%d %lu %lu\n", i, rtree_times[i], index_times[i]);
 
   }
   double tot_rtree=0;
   double tot_index=0;
-  // sum the imtes
-  for (int i=0; i<100;i++){
+  // sum the times
+  for (int i=0; i<20;i++){
       tot_rtree += rtree_times[i];
       tot_index += index_times[i];
   }
 
   // print param and averages
   printf("Parameter l: %s\n", argv[1]);
-  printf("Average runtime with rtree: %f ms\n", (tot_rtree/100)*1000/(CLOCKS_PER_SEC) );
-  printf("Average runtime without rtree: %f s\n", (tot_index/100)/(CLOCKS_PER_SEC) );
+  printf("Average runtime with rtree: %f ms\n", (tot_rtree/20)*1000/(CLOCKS_PER_SEC) );
+  printf("Average runtime without rtree: %f ms\n", (tot_index/20)*1000/(CLOCKS_PER_SEC) );
 
 }
