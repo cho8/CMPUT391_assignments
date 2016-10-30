@@ -2,119 +2,21 @@
 #include <sqlite3.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
+#include "ll_nodes.h"
+#include "dist.h"
 
-// c function
-double mindist_c(double p1, double p2, double s1, double s2, double t1, double t2){
-  double r1, r2;
-  if (p1 < s1){
-    r1 = s1;
-  }
-  else if(p1>t1){
-    r1 = t1;
-  }
-  else {
-    r1 = p1;
-  }
-  if (p2 < s2){
-    r2 = s2;
-  }
-  else if(p2>t2){
-    r2 = t2;
-  }
-  else {
-    r2 = p2;
-  }
-  return pow((p2-r2),2) + pow((p1 - r1),2);
-}
+float p1=0;
+float p2=0;
+
+int depth=0;                    //depth of tree
+int NN=0;                       //nearest neighbor id
+float NN_dist = 999999;       //nearest neighbor distance
+
+// active branch list
+struct node* ABL_head=NULL;
 
 
-
-//sqlite function
-void mindist(sqlite3_context* ctx, int nargs, sqlite3_value** values ){
-  //values : double p1, double p2, double s1, double s2, double t1, double t2){
-  double r1, r2;
-  double p1=sqlite3_value_double(values[0]);
-  double p2=sqlite3_value_double(values[1]);
-  double s1=sqlite3_value_double(values[2]);
-  double s2=sqlite3_value_double(values[3]);
-  double t1=sqlite3_value_double(values[4]);
-  double t2=sqlite3_value_double(values[5]);
-
-  if (p1 < s1){
-    r1 = s1;
-  }
-  else if(p1>t1){
-    r1 = t1;
-  }
-  else {
-    r1 = p1;
-  }
-  if (p2 < s2){
-    r2 = s2;
-  }
-  else if(p2>t2){
-    r2 = t2;
-  }
-  else {
-    r2 = p2;
-  }
-  double y = pow((p2-r2),2) + pow((p1 - r1),2);
-  sqlite3_result_double(ctx, y);
-}
-
-double rmCalc(double s,double p, double t){
-  if (p<=((s+t)/2)){
-    return s;
-  }
-  else {
-    return t;
-  }
-}
-
-double rMCalc(double s,double p, double t){
-  if (p>=((s+t)/2)){
-    return s;
-  }
-  else {
-    return t;
-  }
-}
-
-// calculate minimax distance in c
-double minmax_c(double p1, double p2, double s1, double s2, double t1, double t2){
-  double number1 = pow((p1 - rmCalc(s1,p1,t1)),2) + pow(p2 - rMCalc(s2,p2,t2),2);
-  double number2 = pow((p2 - rmCalc(s2,p2,t2)),2) + pow(p1 - rMCalc(s1,p1,t1),2);
-  if (number1 < number2){
-    return number1;
-  }
-  else {
-    return number2;
-  }
-
-}
-
-// sqlite function
-void minmax(sqlite3_context* ctx, int nargs, sqlite3_value** values ){
-  double p1=sqlite3_value_double(values[0]);
-  double p2=sqlite3_value_double(values[1]);
-  double s1=sqlite3_value_double(values[2]);
-  double s2=sqlite3_value_double(values[3]);
-  double t1=sqlite3_value_double(values[4]);
-  double t2=sqlite3_value_double(values[5]);
-
-  double number1 = pow((p1 - rmCalc(s1,p1,t1)),2) + pow(p2 - rMCalc(s2,p2,t2),2);
-  double number2 = pow((p2 - rmCalc(s2,p2,t2)),2) + pow(p1 - rMCalc(s1,p1,t1),2);
-  if (number1 < number2){
-    sqlite3_result_double(ctx, number1);
-  }
-  else {
-    sqlite3_result_double(ctx, number2);
-  }
-
-}
-
-/* Callback to print result rows */
+/* Exec Callback to print result rows */
 int print_result_cb(void *a_param, int argc, char **argv, char **column) {
   for (int i=0; i< argc; i++)
         printf("%s \t", argv[i]);
@@ -122,6 +24,7 @@ int print_result_cb(void *a_param, int argc, char **argv, char **column) {
     return 0;
 }
 
+/* step through result */
 void step_result(sqlite3_stmt *stmt){
 	int rc;
 
@@ -133,47 +36,121 @@ void step_result(sqlite3_stmt *stmt){
 		printf("%s", sqlite3_column_text(stmt, col));
 		printf("\n");
 	}
+}
 
-
+int depth_result(void *a_param, int argc, char **argv, char **column) {
+  depth = atoi(argv[0]);
+  return(0);
 }
 
 /* Callback to store inners somewhere */
-int hold_result(void *a_param, int argc, char **argv, char **column) {
+int pushABL(void *a_param, int argc, char **argv, char **column) {
   // parse the data blob and insert into a temp table
   char *array[512];
-  char *ins = (char*)a_param;
-  strcpy(ins,"");
+  //active branch list head
+  // strcpy(ins,"");
   int i=0;
+
+  int id;
+  float x1, x2, y1, y2;
+  float mind, minm;
 
   array[i] = strtok(argv[0]," ");
 
   while(array[i]!=NULL)
   {
     if (array[i][0] == '{') {
-       array[i][0]='(';
-       if (i!=0) {
-         strcat(ins,",");
-       }
-       strcat(ins,array[i]);
-
+      array[i]++;
 
      } else if (array[i][strlen(array[i])-1] == '}'){
-      array[i][strlen(array[i])-1]=')';
-      strcat(ins,",");
-      strcat(ins,array[i]);
-    } else {
-      strcat(ins,",");
-      strcat(ins,array[i]);
+      array[i][strlen(array[i])-1]='\0';
+
+    }
+
+
+    switch (i%5) {
+      case 0 :
+        id=atoi(array[i]);
+        break;
+      case 1 :
+        x1=atof(array[i]);
+        break;
+      case 2 :
+        x2=atof(array[i]);
+        break;
+      case 3 :
+        y1=atof(array[i]);
+        break;
+      case 4 :
+        y2=atof(array[i]);
+        mind=mindist_c(p1,p2,x1,x2,y1,y2);
+        minm=minmax_c(p1,p2,x1,x2,y1,y2);
+
+        insert(&ABL_head, id, x1, x2, y1, y2, mind, minm);
+        break;
     }
 
     array[++i] = strtok(NULL," ");
-    // printf("%s\n",array[i-1]);
-
+  //  printf("%s\n",array[i-1]);x
 
   }
-  // printf("%s\n",ins);
 
 
+  struct node* curr = ABL_head;
+  struct node* temp = curr;
+  float minmm = curr->minm;
+
+  while(curr){
+    if (curr->minm < minmm) {
+
+      minmm = curr->minm;
+      printf("%f\n", minmm);
+    }
+    temp = curr;
+    curr = curr->next;
+  }
+
+  curr = ABL_head;
+  temp=curr;
+
+  while(curr){
+
+    if (curr->mind >= minmm) {
+      printf("Prune!\n");
+      temp = curr;
+      curr = curr->prev;
+      delete(&ABL_head, temp->prev);
+
+    }
+    temp = curr;
+    curr = curr->next;
+  }
+
+
+
+  ABL_head = mergeSort(ABL_head);
+
+  // int maxmm = 0
+  // struct node* curr = ABL_head;
+  // struct node* temp = curr;
+  // struct node* comp = curr;
+  // // struct node* temp2 = comp;
+  // while(curr){
+  //   *comp = *ABL_head;
+  //   printf("curr is %d\n", curr->id);
+  //   // while(comp) {
+  //   //   printf("comp is %d\n", comp->id);
+  //   //   if (curr != comp && curr->mind >= comp->minm) {
+  //   //     // curr = curr->next;
+  //   //       // delete(&ABL_head, curr->prev);
+  //   //     printf("prune!\n");
+  //   //   }
+  //   //   temp2 = comp;
+  //   //   comp = comp->next;
+  //   // }
+  //   temp = curr;
+  //   curr = curr->next;
+  // }
   return 0;
 }
 
@@ -184,6 +161,8 @@ int hold_result(void *a_param, int argc, char **argv, char **column) {
 /*** main ***/
 
 int main(int argc, char **argv){
+
+  int depth_i;            // depth traversal counter
 
   if (argc != 3) {
     printf("USAGE: %s <x> <y>\n", argv[0]);
@@ -203,66 +182,35 @@ int main(int argc, char **argv){
     return(1);
   }
 
+  // create mindist and minmax
   sqlite3_create_function(db, "mindist", 6, SQLITE_UTF8, NULL, mindist, NULL, NULL);
   sqlite3_create_function(db, "minmax", 6, SQLITE_UTF8, NULL, minmax, NULL, NULL);
 
+  // find depth of rtree
+  char *sql_depth = sqlite3_mprintf("SELECT rtreedepth(data) "\
+                                    "FROM poi_rtree_node "\
+                                    "WHERE nodeno=1;");
+
+  rc = sqlite3_exec(db, sql_depth, depth_result,0,0);
+
   // find all first level non-root inners
-  char *sql = sqlite3_mprintf("SELECT rtreenode(2, data)"\
+  char *sql_rootnode = sqlite3_mprintf("SELECT rtreenode(2, data)"\
                               "FROM poi_rtree_node "\
-                              "WHERE nodeno=1;");
-  char ins[9999];
+                              "WHERE nodeno=%d;", 1);
 
-  // get the blob of data and parse to string of values
-  rc = sqlite3_exec(db,sql,hold_result,ins,0);
 
-  // store the string of values as a table of mbr coordinates
-  char *sql_temp = sqlite3_mprintf("CREATE TABLE inners(id int, x1 float, x2 float, y1 float, y2 float, mind float, minm float);");
-  char *sql_ins = sqlite3_mprintf("INSERT INTO inners(id, x1, x2, y1, y2) "\
-                              "VALUES %s;",
-                              ins);
-
-  rc = sqlite3_exec(db,sql_temp,0,0,0);
-  rc = sqlite3_exec(db,sql_ins,0,0,0);
-
-  // loop
   // while (1) {
-    char *sql_dist = sqlite3_mprintf("UPDATE inners "\
-                                      "SET mind = mindist(%s,%s,x1,x2,y1,y2), minm = minmax(%s,%s,x1,x2,y1,y2); ",
-                                      argv[1],argv[2], argv[1], argv[2]);
 
-  char *sql_prune1 = sqlite3_mprintf("SELECT id, mind,  minm "\
-                                      "FROM inners "\
-                                      "WHERE mind < minm;");
+    if (depth_i==depth+1) {
+      // looking at leaves
+      // find leaves
 
-    // rc = sqlite3_exec(db,sql_dist,print_result_cb,0,0);
-  rc = sqlite3_prepare_v2(db, sql_dist, -1, &stmt, 0);
+    }
+    // get the children of the current node and prune into ABL
+    rc = sqlite3_exec(db,sql_rootnode,pushABL,0,0);
 
-	if (rc != SQLITE_OK) {
-	  fprintf(stderr, "Preparation failed: %s\n", sqlite3_errmsg(db));
-	  sqlite3_close(db);
-	  return 1;
-  }
-
-  step_result(stmt);
-
-  rc = sqlite3_prepare_v2(db, sql_prune1, -1, &stmt, 0);
-
-  if (rc != SQLITE_OK) {
-	  fprintf(stderr, "Preparation failed: %s\n", sqlite3_errmsg(db));
-	  sqlite3_close(db);
-	  return 1;
-  }
-  step_result(stmt);
-
-
+    depth_i++;
   // }
-
-
-
-  sqlite3_free(sql);
-  sqlite3_free(sql_temp);
-  sqlite3_free(sql_ins);
-
   sqlite3_close(db);
 }
 
