@@ -2,9 +2,17 @@
 #include <sqlite3.h>
 #include <stdlib.h>
 #include <math.h>
+#include "nodes.h"
 
-double mindist_c(double p1, double p2, double s1, double s2, double t1, double t2){
+double mindist_c(Point p, Node n){
   double r1, r2;
+  double p1 = p.x;
+  double p2 = p.y;
+  double s1 = n.x1;
+  double s2 = n.y1;
+  double t1 = n.x2;
+  double t2 = n.y2;
+
   if (p1 < s1){
     r1 = s1;
   }
@@ -45,7 +53,14 @@ double rMCalc(double s,double p, double t){
 }
 
 // calculate minimax distance in c
-double minmax_c(double p1, double p2, double s1, double s2, double t1, double t2){
+double minmax_c(Point p, Node n){
+  double p1 = p.x;
+  double p2 = p.y;
+  double s1 = n.x1;
+  double s2 = n.y1;
+  double t1 = n.x2;
+  double t2 = n.y2;
+
   double number1 = pow((p1 - rmCalc(s1,p1,t1)),2) + pow(p2 - rMCalc(s2,p2,t2),2);
   double number2 = pow((p2 - rmCalc(s2,p2,t2)),2) + pow(p1 - rMCalc(s1,p1,t1),2);
   if (number1 < number2){
