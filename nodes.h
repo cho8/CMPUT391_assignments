@@ -4,8 +4,8 @@
 /* Link list node */
 typedef struct
 {
-    int id;
-    float x1, x2, y1, y2, mind, minm;
+    unsigned long id;
+    float x1, x2, y1, y2;
     struct node* next;
     struct node* prev;
 } Node;
