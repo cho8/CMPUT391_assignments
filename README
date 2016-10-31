@@ -1,0 +1,82 @@
+Assignment 2 CMPUT 391
+
+Done by: Avery Tan, Christina Ho
+
+
+
+This zip file contains:
+*as2.db
+*as2q3.db
+*README.txt
+*makefile
+*nodes.h
+*dist.c
+*dist.h
+*poi.tsv
+*poi_tag.tsv
+*q0.txt
+*q1.txt
+*q2.pdf
+*q3.txt
+*q4.c
+*q5.c
+*q6.txt
+*q7.c
+*q8.c
+
+
+C Libraries used:
+*stdio.h
+*sqlite3.h
+*stdlib.h
+*string.h
+*math.h
+*dist.h
+*nodes.h
+*time.h
+
+
+
+Instructions for using this codebase:
+
+*extract all files into the same directory and open a terminal and navigate to that directory
+*you MUST type "sqlite3 as2.db" into the terminal start SQLITE3 and create the empty database named as2.db
+*you MUST copy the contents of q0.txt into the sqlite3 terminal to create tables and import the data
+*you MUST copy the contents of q1.txt into the sqlite3 terminal to create the rtree for the POIs
+
+
+
+
+TO USE q2.pdf
+*open it in a program that reads pdf files
+*q2.pdf contains two pictures:
+	*the first being a representation of the objects of the rtree and their MBRs in 2D space
+	*the second being a representation of the tree structure of the rtree
+
+
+TO USE q3.txt
+*at the directory where the files are extracted, create a new database, as2q3.db by entering into command line "sqlite3 as2q3.db"
+*copy the contents of q3.txt into the running sqlite3 session 
+
+
+
+TO USE q4.c 
+*in the directory, compile the code by running 'make q4' 
+*execute the code by typing './q4 c x1 x2 y1 y2' where c is the class and (x1,y1) and (x2 y2) are the coordinates of the bounding rectangle
+
+
+
+TO USE q5.c 
+*in the directory, compile the code by running 'make q5' 
+*execute the code by typing './q5' 
+
+
+TO USE q7.c
+*in the directory, compile the code by running 'make q7' 
+*execute the code by typing './q7 x1 y1' where x1 and y1 are the x and y coordinates of the desired point.
+
+
+TO USE q8.c
+*in the directory, compile the code by running 'make q8' 
+*execute the code by typing './q8 x1 y1 k' where x1 and y1 are the x and y coordinates of the desired point and k is the number of nearest neighbours we wantto find. (k<73)
+
