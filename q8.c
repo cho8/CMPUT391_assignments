@@ -6,8 +6,8 @@
 #include "dist.h"
 
 int depth;      // depth of tree
-Nearest* nearest;
 int near_count, k;			// counter, k nearest neighbors
+float max_nearest=0;
 /*
   Callback function to store depth
   */
@@ -258,16 +258,25 @@ void nearestNeighborSearch(sqlite3 *db, sqlite3_stmt *stmt, Node currNode, Point
 
     // For i := 1 to Node.count
     for (int i=0; i<nChildren; i++) {
-
       dist = mindist_c(point, ABL[i]);
-				//kNN array filled, check each and replace with next nearest
-				for (int i=0; i< k; i++) {
-					if (dist < nearest[i].dist) {
-        		nearest[i].dist = dist;
-        		nearest[i].rect = ABL[i];
-      		}
-				}
 
+				if (near_count<k) {
+					nearest[near_count].dist=dist;
+					nearest[near_count].rect=ABL[i];
+					near_count++;
+					if (dist>max_nearest) { max_nearest=dist;};
+				} else {
+					for (int i=0; i<k; i++) {
+						//kNN array filled, check each and replace with next nearest
+						if (dist < max_nearest && nearest[i].dist) {
+							printf("%d Nearest %f Calc %f\n", i, nearest[i].dist, dist);
+		    			nearest[i].dist = dist;
+		    			nearest[i].rect = ABL[i];
+							break;
+		  			}
+					}
+
+			}
     }
   }
   //  Non-leaf level - order, prune and visit nodes
@@ -287,6 +296,7 @@ void nearestNeighborSearch(sqlite3 *db, sqlite3_stmt *stmt, Node currNode, Point
     nChildren = downwardPruneBranchList(currNode, point, ABL, nChildren-1);
     quickSort(ABL,0,nChildren-1,point);
 
+
     //  Iterate through the Active Branch List
     for(int i=0; i<nChildren; i++) {
       //  newNode := Node.branch_branchlist
@@ -297,6 +307,7 @@ void nearestNeighborSearch(sqlite3 *db, sqlite3_stmt *stmt, Node currNode, Point
       //  Perform upward Pruning
       nChildren = upwardPruneBranchList(currNode, point, ABL, nChildren);
       quickSort(ABL,0,nChildren-1,point);
+
       // printABL(ABL,nChildren);
     }
   }
@@ -339,7 +350,7 @@ int main(int argc, char **argv){
 
   // Initialize Nearest neighbors as things really far away
 	k = atoi(argv[3]);
-  Nearest nearest[3];  // Nearest Neighbor
+  Nearest nearest[k];  // Nearest Neighbor
 	for (int i=0; i<k; i++) {
 		nearest[i].dist = 99999999999;
 	}
@@ -351,7 +362,7 @@ int main(int argc, char **argv){
   nearestNeighborSearch(db, stmt, nodeN, point, nearest, depth_count);
 	printf("%d Nearest Neighbors: \n",k);
 	for (int i=0; i<k; i++) {
-  	printf("id: %lu | dist: %f | x1: %f | y1: %f | x2: %f | y2: %f\n", nearest[i].rect.id, nearest[i].dist, nearest[i].rect.x1, nearest[i].rect.y1, nearest[i].rect.x2, nearest[i].rect.y2);
+  	printf("[%d] id: %lu | dist: %f | x1: %f | y1: %f | x2: %f | y2: %f\n", i+1, nearest[i].rect.id, nearest[i].dist, nearest[i].rect.x1, nearest[i].rect.y1, nearest[i].rect.x2, nearest[i].rect.y2);
   }
 	sqlite3_close(db);
 }
