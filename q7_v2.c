@@ -37,13 +37,12 @@ void populateBranchList(char* nodeBlob, Node* ABL) {
     if (array[i][0] == '{') {
       array[i]++;
 
-     } else if (array[i][strlen(array[i])-1] == '}'){
+    } else if (array[i][strlen(array[i])-1] == '}'){
       array[i][strlen(array[i])-1]='\0';
     }
     char *ptr;
     switch (i%5) {
       case 0 :
-
         id=strtol(array[i], &ptr,10);
         break;
       case 1 :
@@ -64,7 +63,6 @@ void populateBranchList(char* nodeBlob, Node* ABL) {
         ABL[ABL_i].y2=y2;
         ABL_i++;
 
-        // printf("%lu %f %f %f %f\n", id,x1,x2,y1,y2);
         break;
     }
 
@@ -128,45 +126,49 @@ int genChildrenList(sqlite3 *db, sqlite3_stmt *stmt, Node node, char* nodeBlob) 
   return nChildren;
 }
 
-/*
-  Partition function for quicksort.
-*/
-int partition( Node a[], int l, int r, Point p) {
-   float pivot;
-   int i, j;
-   Node t;
-   pivot = mindist_c(p,a[l]);
-  //  printf("Node : %lu Pivot : %f\n", a[l].id, pivot);
-   i = l; j = r+1;
-
-   while( 1)
-   {
-   	do ++i; while( mindist_c(p,a[i]) <= pivot && i <= r );
-   	do --j; while( mindist_c(p,a[j]) > pivot );
-   	if( i >= j ) break;
-   	t = a[i]; a[i] = a[j]; a[j] = t;
-   }
-   t = a[l]; a[l] = a[j]; a[j] = t;
-   return j;
+void swap(Node a[], int num1, int num2) {
+   Node temp = a[num1];
+   a[num1] = a[num2];
+   a[num2] = temp;
 }
 
-/*
-  Quicksort nodes in a list 'a' by mindist.
-  Referenced from https://www.tutorialspoint.com/data_structures_algorithms/quick_sort_program_in_c.htm
-  October 29, 2016
-*/
-void quickSort( Node a[], int l, int r, Point p)
-{
-   int j;
+int partition(Node a[], int left, int right, float pivot, Point point) {
+  int leftPointer = left -1;
+  int rightPointer = right;
 
-   if( l < r )
-   {
-   	// divide and conquer
-       j = partition( a, l, r, p);
-       quickSort( a, l, j-1, p);
-       quickSort( a, j+1, r, p);
-   }
+  while(1) {
+    while(mindist_c(point,a[++leftPointer]) < pivot) {
+         //do nothing
+    }
 
+    while(rightPointer > 0 && mindist_c(point,a[--rightPointer]) > pivot) {
+         //do nothing
+    }
+
+    if(leftPointer >= rightPointer) {
+       break;
+    } else {
+        //  printf(" item swapped :%d,%d\n", a[leftPointer],a[rightPointer]);
+      swap(a, leftPointer,rightPointer);
+    }
+  }
+
+  //  printf(" pivot swapped :%d,%d\n", intArray[leftPointer],intArray[right]);
+  swap(a,leftPointer,right);
+  //  printf("Updated Array: ");
+  //  display();
+  return leftPointer;
+}
+
+void quickSort(Node a[], int left, int right, Point point) {
+  if(right-left <= 0) {
+    return;
+  } else {
+    float pivot = mindist_c(point,a[right]);
+    int partitionPoint = partition(a, left, right, pivot, point);
+    quickSort(a, left, partitionPoint-1, point);
+    quickSort(a, partitionPoint+1, right, point);
+  }
 }
 
 int downwardPruneBranchList(Node node, Point point, Node* ABL, int nChildren) {
@@ -179,12 +181,13 @@ int downwardPruneBranchList(Node node, Point point, Node* ABL, int nChildren) {
   for (int i=0; i<nChildren; i++) {
     mm=minmax_c(point,ABL[i]);
     if (mm < min) {
+      printf("mm %f min %f", mm, min);
       min=mm;
     }
   }
   // prune out all that are smaller than minmax
   for (int j=0; j<nChildren; j++) {
-    if (mindist_c(point, ABL[j]) >= min) {
+      if (mindist_c(point, ABL[j]) >= min) {
       // i is pruned, swap it to the end and "shrink" the array max
       t = ABL[j];
       ABL[j]=ABL[nChildren-1];
@@ -213,19 +216,25 @@ int downwardPruneBranchList(Node node, Point point, Node* ABL, int nChildren) {
 int upwardPruneBranchList(Node node, Point point, Node* ABL, int nChildren) {
   Node t;     // temp node pointer
 
-  // Iterate through all combinations applying pruning strategy 2
+  // Iterate through all combinations applying pruning strategy 3
   for (int i=0; i<nChildren; i++) {
-      if (mindist_c(point, node) >= mindist_c(point, ABL[i])) {
-        // i is pruned, swap it to the end and "shrink" the array max
-        t = ABL[i];
-        ABL[i]=ABL[nChildren-1];
-        ABL[nChildren-1]=t;
-        nChildren--;
-        i--;
-      }
+    if (mindist_c(point, node) >= mindist_c(point, ABL[i])) {
+      // i is pruned, swap it to the end and "shrink" the array max
+      t = ABL[i];
+      ABL[i]=ABL[nChildren-1];
+      ABL[nChildren-1]=t;
+      nChildren--;
+      i--;
+    }
   }
   quickSort(ABL,0,nChildren-1,point);
   return nChildren;
+}
+
+void printABL(Node a[], int nChildren) {
+  for (int i=0; i<nChildren; i++) {
+    printf("%lu ", a[i].id);
+  } printf("\n");
 }
 
 
@@ -238,94 +247,70 @@ void nearestNeighborSearch(sqlite3 *db, sqlite3_stmt *stmt, Node currNode, Point
   float dist;
   //  At leaf level - compute distance to actual objects
   //  If Node.type = LEAF
-  printf("Node %lu Current depth: %d\n", currNode.id, depth_count);
+  printf("[Node %lu Current depth: %d]\n", currNode.id, depth_count);
   if (depth_count==depth) {
-    printf("At the leaf level!!\n");
-    printf("==========Getting leaves:\n");
+
     nChildren = genChildrenList(db, stmt, currNode, nodeBlob);
     ABL = malloc(nChildren * sizeof(Node));
     populateBranchList((char*)nodeBlob,ABL);
-    // printf("==========");
+
+    // For i := 1 to Node.count
     for (int i=0; i<nChildren; i++) {
-      printf("%lu ", ABL[i].id);
+
+      //  dist := objectDIST(Point,Node.branch_i.rect)
       dist = mindist_c(point, ABL[i]);
+      //  If (dist < Nearest .dist)
       if (dist < nearest.dist) {
+        //  NN.dist := dist
+        //  NN.rect= Node.branch_i.rect
         nearest.dist = dist;
         nearest.rect = ABL[i];
       }
-      printf("Nearest: %f\n", nearest.dist);
-    } printf("\n");
 
-
-     //if the depth counter is now beyond the lowest level of non-leaf nodes
-        // For i := 1 to Node.count
-
-  //        dist := objectDIST(Point,Node.branch_i.rect)
-  //        If (dist < Nearest .dist)
-  //          NN.dist := dist
-  //          NN.rect= Node.branch_i.rect
-   }
-  //  Non-leaf level - order, prune and visit nodes
-  //  Else
-   else {
-  //      Generate Active Branch list
-
-      printf("Getting children:\n");
-      nChildren = genBranchList(db, stmt,  currNode, nodeBlob);
-
-      ABL = malloc(nChildren * sizeof(Node));
-      populateBranchList((char*)nodeBlob,ABL);
-      //
-      printf("===ABL===\n");
-      for (int i=0; i<nChildren; i++) {
-        printf("%lu ", ABL[i].id);
-      } printf("\n");
-
-
-      printf("===Sort ABL===\n");
-  // sortBranchList(branchList)
-      quickSort(ABL,0, nChildren-1, point);
-      for (int i=0; i<nChildren; i++) {
-        printf("%lu ", ABL[i].id);
-      } printf("\n");
-
-  //
-  //      Perform Downward Pruning
-  //      (may discard all branches)
-  //      last = pruneBranchList(Node, Point, Nearest, branchList)
-  //      nChildren is updated to size of pruned ABL
-      printf("===Current depth: %d Node %lu Prune 1\n", depth_count, currNode.id);
-      nChildren = downwardPruneBranchList(currNode, point, ABL, nChildren-1);
-      // quickSort(ABL,0,nChildren,point);
-      // ABL = realloc(ABL,nChildren* sizeof(Node));
-      printf("===Pruned 1 children to %d\n",nChildren);
-      for (int i=0; i<nChildren; i++) {
-        printf("%lu ", ABL[i].id);
-      } printf("\n");
-  //      Iterate through the Active Branch List
-  //      For i:= 1 to last
-
-        for(int i=0; i<nChildren; i++) {
-  //        newNode := Node.branch_branchlist
-            newNode = ABL[i];
-  //        Recursively visit child nodes
-  //        nearestNeighborSearch(newNode, Point, Nearest)
-            nearestNeighborSearch(db, stmt, newNode, point, depth_count+1);
-
-  //        Perform upward Pruning
-  // //        last := pruneBranchList(Node, Point, Nearest, branchList)
-            printf("======Current depth: %d Node %lu Prune 2\n", depth_count, currNode.id);
-            nChildren = upwardPruneBranchList(currNode, point, ABL, nChildren);
-            quickSort(ABL,0,nChildren-1,point);
-            printf("======Pruned 2 children to %d\n", nChildren);
-
-            for (int i=0; i<nChildren; i++) {
-              printf("%lu ", ABL[i].id);
-            } printf("\n");
-            // ABL = realloc(ABL,nChildren* sizeof(Node));
-
-        }
     }
+
+  }
+  //  Non-leaf level - order, prune and visit nodes
+  else {
+  //  Generate Active Branch list
+    nChildren = genBranchList(db, stmt,  currNode, nodeBlob);
+
+    ABL = malloc(nChildren * sizeof(Node));
+    populateBranchList((char*)nodeBlob,ABL);
+
+    printf("===ABL===\n");
+    printABL(ABL,nChildren);
+
+
+    printf("===Sort ABL===\n");
+    // sortBranchList(branchList)
+    quickSort(ABL,0, nChildren-1, point);
+    printABL(ABL,nChildren);
+
+
+    //  Perform Downward Pruning
+    //  (may discard all branches)
+    printf("===Current depth: %d Node %lu Prune 1\n", depth_count, currNode.id);
+    nChildren = downwardPruneBranchList(currNode, point, ABL, nChildren-1);
+    quickSort(ABL,0,nChildren-1,point);
+    // ABL = realloc(ABL,nChildren* sizeof(Node));
+    printf("===Pruned 1: %d nodes\n",nChildren);
+    printABL(ABL,nChildren);
+    //  Iterate through the Active Branch List
+    for(int i=0; i<nChildren; i++) {
+      //  newNode := Node.branch_branchlist
+      newNode = ABL[i];
+      //  Recursively visit child nodes
+      nearestNeighborSearch(db, stmt, newNode, point, depth_count+1);
+
+      //  Perform upward Pruning
+      printf("======Current depth: %d Node %lu Prune 2\n", depth_count, currNode.id);
+      nChildren = upwardPruneBranchList(currNode, point, ABL, nChildren);
+      quickSort(ABL,0,nChildren-1,point);
+      printf("======Pruned 2: %d nodes\n", nChildren);
+      printABL(ABL,nChildren);
+    }
+  }
 }
 
 
@@ -360,7 +345,7 @@ int main(int argc, char **argv){
   Point point= (Point){ .x = atof(argv[1]), .y = atof(argv[2])};
 
   // start at root node, arbitrary node dimensions
-  Node nodeN = (Node){ .id=1 }; // Current Node
+  Node nodeN = (Node){ .id=1 , .x1=1000, .x2=1000, .y1=1000, .y2=1000}; // Current Node
 
   // Initialize Nearest neighbor as something really far away
   nearest=(Nearest){ .dist=99999999999 };  // Nearest Neighbor
