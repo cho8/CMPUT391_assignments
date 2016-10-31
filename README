@@ -71,6 +71,10 @@ TO USE q5.c
 *execute the code by typing './q5 l' where l is length of the chosen bounding squares that will be generated. 
 
 
+
+**for questions 7 and 8, we treat all objects as points with it's point being the centre of the rectangle. This is done in the dist.c module in the functions rmCalc() and rMCalc().
+
+
 TO USE q7.c
 *in the directory, compile the code by running 'make q7' 
 *execute the code by typing './q7 x1 y1' where x1 and y1 are the x and y coordinates of the desired point.

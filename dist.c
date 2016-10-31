@@ -34,6 +34,7 @@ double mindist_c(Point p, Node n){
   return pow((p2-r2),2) + pow((p1 - r1),2);
 }
 
+//we treat rctangles as a point with the point being the centre of the rectangle.
 double rmCalc(double s,double p, double t){
   if (p<=((s+t)/2)){
     return s;
@@ -43,6 +44,8 @@ double rmCalc(double s,double p, double t){
   }
 }
 
+
+//we treat rctangles as a point with the point being the centre of the rectangle.
 double rMCalc(double s,double p, double t){
   if (p>=((s+t)/2)){
     return s;
