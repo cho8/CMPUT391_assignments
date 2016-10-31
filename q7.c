@@ -198,7 +198,7 @@ int downwardPruneBranchList(Node node, Point point, Node* ABL, int nChildren) {
   for (int i=0; i<nChildren; i++) {
     mm=minmax_c(point,ABL[i]);
     if (mm < min) {
-      printf("mm %f min %f", mm, min);
+      //printf("mm %f min %f", mm, min);
       min=mm;
     }
   }

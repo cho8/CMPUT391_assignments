@@ -68,7 +68,7 @@ TO USE q4.c
 
 TO USE q5.c 
 *in the directory, compile the code by running 'make q5' 
-*execute the code by typing './q5' 
+*execute the code by typing './q5 l' where l is length of the chosen bounding squares that will be generated. 
 
 
 TO USE q7.c
