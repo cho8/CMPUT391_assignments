@@ -127,6 +127,53 @@ int genChildrenList(sqlite3 *db, sqlite3_stmt *stmt, Node node, char* nodeBlob) 
   return nChildren;
 }
 
+void swapNearest(Nearest a[], int num1, int num2) {
+   Nearest temp = a[num1];
+   a[num1] = a[num2];
+   a[num2] = temp;
+}
+
+int partitionNearest(Nearest a[], int left, int right, float pivot) {
+  int leftPointer = left -1;
+  int rightPointer = right;
+
+	// if sort by node
+
+  while(1) {
+    while(a[++leftPointer].dist < pivot) {
+         //do nothing
+    }
+
+    while(rightPointer > 0 && a[--rightPointer].dist > pivot) {
+         //do nothing
+    }
+
+    if(leftPointer >= rightPointer) {
+       break;
+    } else {
+
+      	swapNearest(a, leftPointer,rightPointer);
+    }
+  }
+
+
+
+  swapNearest(a,leftPointer,right);
+
+  return leftPointer;
+}
+
+void quickSortNearest(Nearest a[], int left, int right) {
+  if(right-left <= 0) {
+    return;
+  } else {
+    float pivot = a[right].dist;
+    int partitionPoint = partitionNearest(a, left, right, pivot);
+    quickSortNearest(a, left, partitionPoint-1);
+    quickSortNearest(a, partitionPoint+1, right);
+  }
+}
+
 void swap(Node a[], int num1, int num2) {
    Node temp = a[num1];
    a[num1] = a[num2];
@@ -137,6 +184,7 @@ int partition(Node a[], int left, int right, float pivot, Point point) {
   int leftPointer = left -1;
   int rightPointer = right;
 
+	// if sort by node
   while(1) {
     while(mindist_c(point,a[++leftPointer]) < pivot) {
          //do nothing
@@ -149,15 +197,12 @@ int partition(Node a[], int left, int right, float pivot, Point point) {
     if(leftPointer >= rightPointer) {
        break;
     } else {
-        //  printf(" item swapped :%d,%d\n", a[leftPointer],a[rightPointer]);
-      swap(a, leftPointer,rightPointer);
+
+      	swap(a, leftPointer,rightPointer);
     }
   }
 
-  //  printf(" pivot swapped :%d,%d\n", intArray[leftPointer],intArray[right]);
   swap(a,leftPointer,right);
-  //  printf("Updated Array: ");
-  //  display();
   return leftPointer;
 }
 
@@ -182,7 +227,6 @@ int downwardPruneBranchList(Node node, Point point, Node* ABL, int nChildren) {
   for (int i=0; i<nChildren; i++) {
     mm=minmax_c(point,ABL[i]);
     if (mm < min) {
-      printf("mm %f min %f", mm, min);
       min=mm;
     }
   }
@@ -360,6 +404,7 @@ int main(int argc, char **argv){
   int depth_count = 0;
 
   nearestNeighborSearch(db, stmt, nodeN, point, nearest, depth_count);
+	quickSortNearest(nearest,0,k-1);
 	printf("%d Nearest Neighbors: \n",k);
 	for (int i=0; i<k; i++) {
   	printf("[%d] id: %lu | dist: %f | x1: %f | y1: %f | x2: %f | y2: %f\n", i+1, nearest[i].rect.id, nearest[i].dist, nearest[i].rect.x1, nearest[i].rect.y1, nearest[i].rect.x2, nearest[i].rect.y2);
