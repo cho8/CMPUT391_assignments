@@ -1,3 +1,6 @@
+DROP TABLE IF EXISTS recs;
+DROP TABLE IF EXISTS recs_rtree;
+
 CREATE TABLE recs(
 	minX int,
 	maxX int,
@@ -33,13 +36,13 @@ SELECT
 FROM recs;
 
 -- mbrs of objects
-SELECT * from recs_rtree;
+SELECT rtreenode(2,data) from recs_rtree_node;
 
 -- mbrs of nodes
 SELECT i.nodeno, min(minX), max(maxX), min(minY), max(maxY)
 FROM recs_rtree r, recs_rtree_rowid i
 WHERE r.id=i.rowid
-GROUP BY i.nodeno
+GROUP BY i.nodeno;
 
 
 
