@@ -1,76 +1,66 @@
+// Avery Tan
+// Christina Ho
+// Assignment2 CMPUT391
+
+/*
+Q7 (30 pts)
+
+Write a C program, in a file called q7.c that takes a point (x1,y1) as input,
+and prints the coordinates of the object that is its nearest neighbor, breaking
+ties arbitrarily.
+
+Marking breakdown: 15 pts for correctness, and 15 pts for efficiency. To get
+full marks, your program must implement an algorithm that is at least as fast
+(in asymptotic terms) as the one in the Roussopoulos paper. You can get full
+marks even if your program is not the fastest among all submissions.
+*/
+
 #include <stdio.h>
 #include <sqlite3.h>
 #include <stdlib.h>
 #include <string.h>
-#include "ll_nodes.h"
+#include "nodes.h"
 #include "dist.h"
 
-float p1=0;
-float p2=0;
-
-int depth=0;                    //depth of tree
-int NN=0;                       //nearest neighbor id
-float NN_dist = 999999;       //nearest neighbor distance
-
-// active branch list
-struct node* ABL_head=NULL;
-
-
-/* Exec Callback to print result rows */
-int print_result_cb(void *a_param, int argc, char **argv, char **column) {
-  for (int i=0; i< argc; i++)
-        printf("%s \t", argv[i]);
-    printf("\n");
-    return 0;
-}
-
-/* step through result */
-void step_result(sqlite3_stmt *stmt){
-	int rc;
-
-	while((rc = sqlite3_step(stmt)) == SQLITE_ROW) {
-		int col;
-		for(col=0; col<sqlite3_column_count(stmt)-1; col++) {
-			printf("%s|", sqlite3_column_text(stmt, col));
-		}
-		printf("%s", sqlite3_column_text(stmt, col));
-		printf("\n");
-	}
-}
-
+int depth;      // depth of tree
+Nearest nearest;  // Nearest neighbor
+/*
+  Callback function to store depth
+  */
 int depth_result(void *a_param, int argc, char **argv, char **column) {
   depth = atoi(argv[0]);
   return(0);
 }
 
-/* Callback to store inners somewhere */
-int pushABL(void *a_param, int argc, char **argv, char **column) {
+/*
+  Parse blob and fill the ABL with children of non-leaf node
+*/
+void populateBranchList(char* nodeBlob, Node* ABL) {
   // parse the data blob and insert into a temp table
   char *array[512];
-  //active branch list head
+  //active branch list
+
   // strcpy(ins,"");
   int i=0;
+  int ABL_i=0;
 
-  int id;
+  unsigned long id;
   float x1, x2, y1, y2;
   float mind, minm;
 
-  array[i] = strtok(argv[0]," ");
+  array[i] = strtok(nodeBlob," ");
 
-  while(array[i]!=NULL)
-  {
+  while(array[i]!=NULL) {
     if (array[i][0] == '{') {
       array[i]++;
 
-     } else if (array[i][strlen(array[i])-1] == '}'){
+    } else if (array[i][strlen(array[i])-1] == '}'){
       array[i][strlen(array[i])-1]='\0';
-
     }
-
-
+    char *ptr;
     switch (i%5) {
       case 0 :
-        id=atoi(array[i]);
+        id=strtol(array[i], &ptr,10);
         break;
       case 1 :
         x1=atof(array[i]);
@@ -83,86 +73,249 @@ int pushABL(void *a_param, int argc, char **argv, char **column) {
         break;
       case 4 :
         y2=atof(array[i]);
-        mind=mindist_c(p1,p2,x1,x2,y1,y2);
-        minm=minmax_c(p1,p2,x1,x2,y1,y2);
+        ABL[ABL_i].id=id;
+        ABL[ABL_i].x1=x1;
+        ABL[ABL_i].x2=x2;
+        ABL[ABL_i].y1=y1;
+        ABL[ABL_i].y2=y2;
+        ABL_i++;
 
-        insert(&ABL_head, id, x1, x2, y1, y2, mind, minm);
         break;
     }
 
     array[++i] = strtok(NULL," ");
-  //  printf("%s\n",array[i-1]);x
-
+    // printf("%s\n",array[i-1]);
   }
-
-
-  struct node* curr = ABL_head;
-  struct node* temp = curr;
-  float minmm = curr->minm;
-
-  while(curr){
-    if (curr->minm < minmm) {
-
-      minmm = curr->minm;
-      printf("%f\n", minmm);
-    }
-    temp = curr;
-    curr = curr->next;
-  }
-
-  curr = ABL_head;
-  temp=curr;
-
-  while(curr){
-
-    if (curr->mind >= minmm) {
-      printf("Prune!\n");
-      temp = curr;
-      curr = curr->prev;
-      delete(&ABL_head, temp->prev);
-
-    }
-    temp = curr;
-    curr = curr->next;
-  }
-
-
-
-  ABL_head = mergeSort(ABL_head);
-
-  // int maxmm = 0
-  // struct node* curr = ABL_head;
-  // struct node* temp = curr;
-  // struct node* comp = curr;
-  // // struct node* temp2 = comp;
-  // while(curr){
-  //   *comp = *ABL_head;
-  //   printf("curr is %d\n", curr->id);
-  //   // while(comp) {
-  //   //   printf("comp is %d\n", comp->id);
-  //   //   if (curr != comp && curr->mind >= comp->minm) {
-  //   //     // curr = curr->next;
-  //   //       // delete(&ABL_head, curr->prev);
-  //   //     printf("prune!\n");
-  //   //   }
-  //   //   temp2 = comp;
-  //   //   comp = comp->next;
-  //   // }
-  //   temp = curr;
-  //   curr = curr->next;
-  // }
-  return 0;
 }
 
-// boolean prune(int child_id) {
-//
-// }
+/*
+  From sqlite obtain the number of non-leaf children nodes and
+  the blob containing node MBRs.
+*/
 
-/*** main ***/
+int genBranchList(sqlite3 *db, sqlite3_stmt *stmt, Node node, char* nodeBlob) {
+  int nChildren=0;
+  int rc;
+  // get the MBRs contained in the node
+  char *sql = sqlite3_mprintf("SELECT rtreenode(2, data) as data, COUNT(p.parentnode) "\
+                              "FROM poi_rtree_node n, poi_rtree_parent p "\
+                              "WHERE n.nodeno = p.parentnode AND n.nodeno=%lu;", node.id);
+  rc = sqlite3_prepare_v2(db, sql, -1, &stmt, 0);
+  if (rc != SQLITE_OK) {
+    fprintf(stderr, "Preparation failed sql_children: %s\n", sqlite3_errmsg(db));
+    sqlite3_close(db);
+  }
+
+  while((rc = sqlite3_step(stmt)) == SQLITE_ROW) {
+    sprintf(nodeBlob, "%s", sqlite3_column_text(stmt, 0));
+    nChildren = sqlite3_column_int(stmt, 1);
+  }
+  sqlite3_free(sql);
+  sqlite3_finalize(stmt);
+  return nChildren;
+}
+
+/*
+  From sqlite obtain the number of leaf children and
+  the blob containing the leaf MBRs.
+*/
+int genChildrenList(sqlite3 *db, sqlite3_stmt *stmt, Node node, char* nodeBlob) {
+  int nChildren=0;
+  int rc;
+  // get the MBRs contained in the node
+  char *sql_leaf = sqlite3_mprintf("SELECT rtreenode(2, data) as data, COUNT(r.nodeno) "\
+                              "FROM poi_rtree_node n, poi_rtree_rowid r "\
+                              "WHERE n.nodeno = r.nodeno AND n.nodeno=%lu;", node.id);
+
+  rc = sqlite3_prepare_v2(db, sql_leaf, -1, &stmt, 0);
+
+  if (rc != SQLITE_OK) {
+    fprintf(stderr, "Preparation failed sql_children: %s\n", sqlite3_errmsg(db));
+    sqlite3_close(db);
+  }
+
+  while((rc = sqlite3_step(stmt)) == SQLITE_ROW) {
+    sprintf(nodeBlob, "%s", sqlite3_column_text(stmt, 0));
+    nChildren = sqlite3_column_int(stmt, 1);
+  }
+  sqlite3_free(sql_leaf);
+  sqlite3_finalize(stmt);
+  return nChildren;
+}
+
+void swap(Node a[], int num1, int num2) {
+   Node temp = a[num1];
+   a[num1] = a[num2];
+   a[num2] = temp;
+}
+
+int partition(Node a[], int left, int right, float pivot, Point point) {
+  int leftPointer = left -1;
+  int rightPointer = right;
+
+  while(1) {
+    while(mindist_c(point,a[++leftPointer]) < pivot) {
+         //do nothing
+    }
+
+    while(rightPointer > 0 && mindist_c(point,a[--rightPointer]) > pivot) {
+         //do nothing
+    }
+
+    if(leftPointer >= rightPointer) {
+       break;
+    } else {
+        //  printf(" item swapped :%d,%d\n", a[leftPointer],a[rightPointer]);
+      swap(a, leftPointer,rightPointer);
+    }
+  }
+
+  //  printf(" pivot swapped :%d,%d\n", intArray[leftPointer],intArray[right]);
+  swap(a,leftPointer,right);
+  //  printf("Updated Array: ");
+  //  display();
+  return leftPointer;
+}
+
+void quickSort(Node a[], int left, int right, Point point) {
+  if(right-left <= 0) {
+    return;
+  } else {
+    float pivot = mindist_c(point,a[right]);
+    int partitionPoint = partition(a, left, right, pivot, point);
+    quickSort(a, left, partitionPoint-1, point);
+    quickSort(a, partitionPoint+1, right, point);
+  }
+}
+
+int downwardPruneBranchList(Node node, Point point, Node* ABL, int nChildren) {
+  Node t;     // temp node pointer
+  float min=minmax_c(point,ABL[0]);       // minimum minmax
+  float mm;
+
+  // Iterate through all combinations applying pruning strategy 1
+  // find the minimum minmax
+  for (int i=0; i<nChildren; i++) {
+    mm=minmax_c(point,ABL[i]);
+    if (mm < min) {
+      printf("mm %f min %f", mm, min);
+      min=mm;
+    }
+  }
+  // prune out all that are smaller than minmax
+  for (int j=0; j<nChildren; j++) {
+      if (mindist_c(point, ABL[j]) >= min) {
+      // i is pruned, swap it to the end and "shrink" the array max
+      t = ABL[j];
+      ABL[j]=ABL[nChildren-1];
+      ABL[nChildren-1]=t;
+      nChildren--;
+      j--; //rewind and check this index again
+    }
+  }
+  quickSort(ABL,0,nChildren-1,point);
+
+  // Pruning strategy 2
+  for (int i=0; i<nChildren;i++) {
+    if(mindist_c(point,ABL[i]) >= minmax_c(point,node)) {
+      t = ABL[i];
+      ABL[i]=ABL[nChildren-1];
+      ABL[nChildren-1]=t;
+      nChildren--;
+      i--; //rewind and check this index again
+    }
+  }
+  quickSort(ABL,0,nChildren-1,point);
+  return nChildren;
+
+}
+
+int upwardPruneBranchList(Node node, Point point, Node* ABL, int nChildren) {
+  Node t;     // temp node pointer
+
+  // Iterate through all combinations applying pruning strategy 3
+  for (int i=0; i<nChildren; i++) {
+    if (mindist_c(point, node) >= mindist_c(point, ABL[i])) {
+      // i is pruned, swap it to the end and "shrink" the array max
+      t = ABL[i];
+      ABL[i]=ABL[nChildren-1];
+      ABL[nChildren-1]=t;
+      nChildren--;
+      i--;
+    }
+  }
+  quickSort(ABL,0,nChildren-1,point);
+  return nChildren;
+}
+
+
+/*
+  Print out the ABL (for debugging purposes)
+*/
+void printABL(Node a[], int nChildren) {
+  for (int i=0; i<nChildren; i++) {
+    printf("%lu ", a[i].id);
+  } printf("\n");
+}
+
+void nearestNeighborSearch(sqlite3 *db, sqlite3_stmt *stmt, Node currNode, Point point, int depth_count) {
+  Node newNode;   // newNode
+  Node *ABL;    // branchList
+  char nodeBlob[9999];
+  int nChildren;
+  float dist;
+  //  At leaf level - compute distance to actual objects
+  //  If Node.type = LEAF
+  if (depth_count==depth) {
+
+    nChildren = genChildrenList(db, stmt, currNode, nodeBlob);
+    ABL = malloc(nChildren * sizeof(Node));
+    populateBranchList((char*)nodeBlob,ABL);
+
+    // For i := 1 to Node.count
+    for (int i=0; i<nChildren; i++) {
+
+      dist = mindist_c(point, ABL[i]);
+      if (dist < nearest.dist) {
+        nearest.dist = dist;
+        nearest.rect = ABL[i];
+      }
+    }
+  }
+  //  Non-leaf level - order, prune and visit nodes
+  else {
+    //  Generate Active Branch list
+    nChildren = genBranchList(db, stmt,  currNode, nodeBlob);
+
+    ABL = malloc(nChildren * sizeof(Node));
+    populateBranchList((char*)nodeBlob,ABL);
+
+    // sortBranchList(branchList)
+    quickSort(ABL,0, nChildren-1, point);
+    // printABL(ABL,nChildren);
+
+    //  Perform Downward Pruning
+    //  (may discard all branches)
+    nChildren = downwardPruneBranchList(currNode, point, ABL, nChildren-1);
+    quickSort(ABL,0,nChildren-1,point);
+
+    //  Iterate through the Active Branch List
+    for(int i=0; i<nChildren; i++) {
+      //  newNode := Node.branch_branchlist
+      newNode = ABL[i];
+      //  Recursively visit child nodes
+      nearestNeighborSearch(db, stmt, newNode, point, depth_count+1);
+
+      //  Perform upward Pruning
+      nChildren = upwardPruneBranchList(currNode, point, ABL, nChildren);
+      quickSort(ABL,0,nChildren-1,point);
+      // printABL(ABL,nChildren);
+    }
+  }
+}
+
 
 int main(int argc, char **argv){
-
-  int depth_i;            // depth traversal counter
 
   if (argc != 3) {
     printf("USAGE: %s <x> <y>\n", argv[0]);
@@ -172,7 +325,7 @@ int main(int argc, char **argv){
   sqlite3 *db; //the database
   sqlite3_stmt    *stmt; //the query
   char database_name[]= "as2.db";
-
+  char blob[999];
   int rc;
 
   rc = sqlite3_open(database_name, &db);
@@ -182,78 +335,27 @@ int main(int argc, char **argv){
     return(1);
   }
 
-  // create mindist and minmax
-  sqlite3_create_function(db, "mindist", 6, SQLITE_UTF8, NULL, mindist, NULL, NULL);
-  sqlite3_create_function(db, "minmax", 6, SQLITE_UTF8, NULL, minmax, NULL, NULL);
-
-  // find depth of rtree
+  // get the depth of the whole rtree
   char *sql_depth = sqlite3_mprintf("SELECT rtreedepth(data) "\
                                     "FROM poi_rtree_node "\
                                     "WHERE nodeno=1;");
 
   rc = sqlite3_exec(db, sql_depth, depth_result,0,0);
+  sqlite3_free(sql_depth);
+  // set the query point
+  Point point= (Point){ .x = atof(argv[1]), .y = atof(argv[2])};
 
-  // find all first level non-root inners
-  char *sql_rootnode = sqlite3_mprintf("SELECT rtreenode(2, data)"\
-                              "FROM poi_rtree_node "\
-                              "WHERE nodeno=%d;", 1);
+  // start at root node, arbitrary node dimensions
+  Node nodeN = (Node){ .id=1 , .x1=1000, .x2=1000, .y1=1000, .y2=1000}; // Current Node
 
+  // Initialize Nearest neighbor as something really far away
+  nearest=(Nearest){ .dist=99999999999 };  // Nearest Neighbor
 
-  // while (1) {
+  // Initialize depth counter
+  int depth_count = 0;
 
-    if (depth_i==depth+1) {
-      // looking at leaves
-      // find leaves
+  nearestNeighborSearch(db, stmt, nodeN, point, depth_count);
 
-    }
-    // get the children of the current node and prune into ABL
-    rc = sqlite3_exec(db,sql_rootnode,pushABL,0,0);
-
-    depth_i++;
-  // }
+  printf("Nearest Neighbor: \n id: %lu\n dist: %f\n x1: %f\n y1: %f\n x2: %f\n y2: %f\n", nearest.rect.id, nearest.dist, nearest.rect.x1, nearest.rect.y1, nearest.rect.x2, nearest.rect.y2);
   sqlite3_close(db);
 }
-
-
-/*
-  ======== recursively find path that is pruned
-  WITH RECURSIVE nodes(child, parent) AS (
-    SELECT nodeno, parentnode
-    FROM  poi_rtree_parent
-    WHERE prune(nodeno)=TRUE;
-    UNION
-    SELECT n.child, p.parentnode
-    FROM nodes n, poi_rtree_parent p
-    WHERE  n.parent=p.nodeno
-    AND prune(child)=TRUE
-  )
-  SELECT * FROM nodes where parent=1;
-
-  ========= find all nodes reachable from 1
-
-  WITH RECURSIVE nodes(child, parent, depth) AS
-  (
-    SELECT p.nodeno, p.parentnode, 0 as depth
-    FROM  inners i, poi_rtree_parent p
-    where i.id = p.parentnode
-    UNION
-    SELECT n.child, p.parentnode, depth+1
-    FROM nodes n, poi_rtree_parent p
-    WHERE  n.parent=p.nodeno
-  )
-  SELECT * FROM nodes where parent = 1;
-
-
-  ============ print tree :)
-
-  WITH RECURSIVE nodes(child,depth) AS (
-    VALUES(1,0)
-    UNION ALL
-    SELECT p.nodeno, depth+1
-    FROM nodes n, poi_rtree_parent p
-    WHERE  n.child=p.parentnode
-    ORDER BY 2 DESC
-  )
-  SELECT substr('..........',1,depth*3) || child FROM nodes;
-
-  */

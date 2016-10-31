@@ -1,3 +1,20 @@
+// Avery Tan
+// Christina Ho
+// Assignment2 CMPUT391
+
+/*
+Q8 (15 pts)
+
+Write a C program, in a file called q8.c that takes a point (x1,y1) and k as
+input, and prints a list of the k nearest neighbors. You can do this, for
+instance, by implementing what is outlined in Section 3.3 of the Roussopoulos
+paper.
+
+Marking breakdown: 5 pts for correctness, and 10 pts for efficiency. To get
+full marks, your program must implement an algorithm that is at least as fast
+(in asymptotic terms) as the one outlined in Section 3.3 the Roussopoulos paper.
+*/
+
 #include <stdio.h>
 #include <sqlite3.h>
 #include <stdlib.h>
@@ -137,7 +154,6 @@ int partitionNearest(Nearest a[], int left, int right, float pivot) {
   int leftPointer = left -1;
   int rightPointer = right;
 
-	// if sort by node
 
   while(1) {
     while(a[++leftPointer].dist < pivot) {
@@ -156,10 +172,7 @@ int partitionNearest(Nearest a[], int left, int right, float pivot) {
     }
   }
 
-
-
   swapNearest(a,leftPointer,right);
-
   return leftPointer;
 }
 
@@ -276,7 +289,6 @@ int upwardPruneBranchList(Node node, Point point, Node* ABL, int nChildren) {
   return nChildren;
 }
 
-
 /*
   Print out the ABL (for debugging purposes)
 */
@@ -313,7 +325,6 @@ void nearestNeighborSearch(sqlite3 *db, sqlite3_stmt *stmt, Node currNode, Point
 					for (int i=0; i<k; i++) {
 						//kNN array filled, check each and replace with next nearest
 						if (dist < max_nearest && nearest[i].dist) {
-							printf("%d Nearest %f Calc %f\n", i, nearest[i].dist, dist);
 		    			nearest[i].dist = dist;
 		    			nearest[i].rect = ABL[i];
 							break;
