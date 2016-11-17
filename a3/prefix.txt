@@ -1,0 +1,5 @@
+rdf:	<http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+dbr:	<http://dbpedia.org/resource/>
+yago:	<http://dbpedia.org/class/yago/>
+wikidata:	<http://www.wikidata.org/entity/>
+dbo:	<http://dbpedia.org/ontology/>

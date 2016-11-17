@@ -1,0 +1,3 @@
+/* Indexes on predicates ....and ? */
+
+/* Need indexes because many rows will have duplicate subjects and predicates for one object. Indexing will reduce the search cost. */

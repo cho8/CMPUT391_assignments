@@ -1,0 +1,14 @@
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX dct: <http://purl.org/dc/terms/>
+PREFIX dbc: <http://dbpedia.org/resource/Category:>
+PREFIX dbp: <http://dbpedia.org/property/>
+PREFIX db: <http://dbpedia.org/>
+PREFIX dbo: <http://dbpedia.org/ontology/>
+SELECT  ?team ?player ?country WHERE {
+  	?country dct:subject dbc:Countries_in_South_America	.				# Get countries
+  	?player dbo:birthPlace ?country .									# Get players born in that country
+  	?player dbo:team ?team .											# ... that played in teams
+	?team dct:subject dbc:La_Liga_clubs .								# ... in La Liga
+    ?team dct:subject dbc:Unrelegated_association_football_clubs .		# ... that are unrelegated
+} GROUP BY ?country
