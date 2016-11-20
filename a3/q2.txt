@@ -1,0 +1,19 @@
+# TODO: filter out regional airports
+
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX dct: <http://purl.org/dc/terms/>
+PREFIX dbc: <http://dbpedia.org/resource/Category:>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX dbo: <http://dbpedia.org/ontology/>
+PREFIX schema: <http://schema.org/>
+SELECT distinct ?airport ?city WHERE {
+  ?province skos:broader dbc:Airports_in_Canada_by_province_or_territory .	# Get list of provinces
+  ?apcat skos:broader ?province .											# ... and airport categories in those provinces
+  ?airport dct:subject ?apcat .												# Get airports from categories
+  {?airport dbo:icaoLocationIdentifier ?icao .}								# ... that have ICAO code
+  UNION
+  {?airport dbo:iataLocationIdentifier ?iata .}								# ... or an iata code
+  ?airport dbo:city ?city	.												# and get the city
+  ?city rdf:type schema:City
+} 

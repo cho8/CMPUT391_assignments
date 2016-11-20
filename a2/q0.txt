@@ -1,0 +1,58 @@
+DROP TABLE IF EXISTS poi_tag;
+DROP TABLE IF EXISTS poi;
+
+CREATE TABLE poi_tag(
+    id int,
+    key text,
+    value text);
+
+.mode tabs
+.import ./poi_tag.tsv poi_tag
+
+CREATE TABLE poi(
+    id int,
+    uid int,
+    lat float,
+    lon float);
+
+.import poi.tsv poi
+
+ALTER TABLE poi
+    ADD COLUMN x1;
+ALTER TABLE poi
+    ADD COLUMN x2;
+
+ALTER TABLE poi
+    ADD COLUMN y1;
+ALTER TABLE poi
+    ADD COLUMN y2;
+
+/*
+* ranges:
+* lat: (48.06000, 48.24900)
+* lon: (11.35800, 11.72400)
+*
+* distance_per_lat = 111191 m
+* distance_per_lon = 74539 m
+*
+* Find the proportion of 1000 that the lat makes up
+*   x1 = [(lat - 48.060) / (48.249-48.060)] * 1000
+*                     = (lat - 48.060) * 5291.005291
+*
+* Find the proportion of 1000 that the lon makes up
+*   y1 = [(lon - 11.358) / (11.724-11.358)] * 1000
+*                     = (lon - 11.358) * 2732.240437
+*
+* Find the fraction of a degree that 10m is and add it to lat/lon
+*   10_to_lat = 10/111191 = 0.00008993533649
+*   10 to lon = 10/74539 = 0.0001341579576
+*   x2 = (lat + 0.0008993533649 - 48.060) * 5291.005291
+*   y2 = (lon + 0.0001341579576 - 11.358) * 2732.240437
+*
+*/
+
+UPDATE poi SET
+    x1 = (lat - 48.060) * 5291.005291,
+    y1 = (lon - 11.358) * 2732.240437,
+    x2 = (lat + 0.0008993533649 - 48.060) * 5291.005291,
+    y2 = (lon + 0.0001341579576 - 11.358) * 2732.240437;
