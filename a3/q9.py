@@ -1,5 +1,26 @@
+import sys, mmap, re
+
 curr = dict()
 temp = list()
+
+d_prefix = {}
+
+def parsePrefix(dataLine):
+    dataLine = dataLine.replace(' ', '\t');
+    tag, pref, iri, term= dataLine.split('\t');
+    # print(tag, pref, iri, term);
+    if tag =='@prefix' :
+        # check the prefix
+        if pref[-1] != ':':
+            print(">> Missing colon")
+            return False        # Error! Missing Colon
+
+        # parse the iri
+        if term.strip('\n') == '.':
+            # print("print to file")
+            # f_prefix.write(pref + '\t' +iri+ '\n')
+            d_prefix[pref] = iri.strip('<>')
+            print d_prefix
 
 
 def parse_rdf():
@@ -10,6 +31,9 @@ def parse_rdf():
             if "@" in lin and ('@en' not in lin):
                #print(lin)
                continue
+
+            if "@" in lin and ('@prefix' in lin):
+                parsePrefix(lin);
             # print(lin)
             # temp = lin.replace("\t", '\n').split()
             temp = lin.replace('\n','').replace('@en','').split("\t")
@@ -19,7 +43,7 @@ def parse_rdf():
 
             if len(temp) != 3:
                break;
- 
+
 
             if (temp[0] and temp[1] and temp[2]):
                print('case 1')
@@ -57,3 +81,19 @@ def parse_rdf():
 
 def check(sub, pred, obj):
    pass
+
+
+###### Main ###########################
+if __name__ == "__main__":
+    argv = sys.argv
+    if len(argv) == 3:
+        sqldb = argv[1]
+        filename = argv[2]
+        readDataFile(filename)
+    else:
+        print("Usage: "+ argv[0] + " <sql-database> <rdf>\n")
+
+
+
+
+##### END #############################

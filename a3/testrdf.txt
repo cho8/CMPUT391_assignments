@@ -1,20 +1,37 @@
-@prefix rdf:	<http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
-@prefix dbr:	<http://dbpedia.org/resource/> .
-@prefix yago:	<http://dbpedia.org/class/yago/> .
-dbr:Edmonton	rdf:type	yago:WikicatTownsInAlberta ,
-		yago:Town108665504 ,
-		yago:GeographicalArea108574314 .
-@prefix wikidata:	<http://www.wikidata.org/entity/> .
-dbr:Edmonton	rdf:type	wikidata:Q486972 ,
-		yago:Artifact100021939 ,
-		yago:Municipality108626283 .
-@prefix dbo:	<http://dbpedia.org/ontology/> .
-dbr:Edmonton	rdf:type	dbo:City ,
-		dbo:PopulatedPlace ,
-		wikidata:Q515 ,
-		yago:AdministrativeDistrict108491826 ,
-		yago:Way104564698 ,
-		yago:WikicatRoadsInEdmonton ,
-		yago:PhysicalEntity100001930 ,
-		yago:Object100002684 ,
-		dbo:Settlement .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@base <http://example.org/schemas/vehicles> .
+
+:MotorVehicle a rdfs:Class .
+
+:PassengerVehicle a rdfs:Class ;
+   rdfs:subClassOf :MotorVehicle .
+
+:Truck a rdfs:Class ;
+   rdfs:subClassOf :MotorVehicle .
+
+:Van a rdfs:Class ;
+   rdfs:subClassOf :MotorVehicle .
+
+:MiniVan a rdfs:Class ;
+   rdfs:subClassOf :Van .
+   rdfs:subClassOf :PassengerVehicle ;
+
+:Person a rdfs:Class .
+
+xsd:integer a rdfs:Datatype .
+
+:registeredTo a rdf:Property ;
+   rdfs:domain :MotorVehicle ;
+   rdfs:range  :Person .
+
+:rearSeatLegRoom a rdf:Property ;
+   rdfs:domain rdf:resource :MotorVehicle ;
+   rdfs:range xsd:integer .
+
+:driver a rdf:Property ;
+   rdfs:domain :MotorVehicle .
+
+:primaryDriver a rdf:Property ;
+   rdfs:subPropertyOf :driver .
