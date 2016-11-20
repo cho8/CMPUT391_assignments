@@ -1,4 +1,4 @@
-/* Indexes on predicates ....and ? */
+CREATE INDEX subpred_index ON rdf(sub, pred);
 
 /*
 We would need indexes on the predicate at the very least. Since we are using
