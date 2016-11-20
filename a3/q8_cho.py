@@ -6,6 +6,7 @@ print 'Argument List:', str(sys.argv)
 
 fileSize = None
 f_prefix = open('prefix.txt','w');
+d_prefix = {}
 
 def readDataFile(filename):
     with open(filename, 'r+b') as ff:
@@ -17,6 +18,7 @@ def readDataFile(filename):
         # parse line
         while True:
             dataLine = f.readline()
+            # print(dataLine);
             lineArr = dataLine.split("\t")
 
             if re.search('@prefix', lineArr[0]):
@@ -29,7 +31,7 @@ def readDataFile(filename):
 def parsePrefix(dataLine):
     dataLine = dataLine.replace(' ', '\t');
     tag, pref, iri, term= dataLine.split('\t');
-    print(tag, pref, iri, term);
+    # print(tag, pref, iri, term);
     if tag =='@prefix' :
         # check the prefix
         if pref[-1] != ':':
@@ -38,8 +40,10 @@ def parsePrefix(dataLine):
 
         # parse the iri
         if term.strip('\n') == '.':
-            print("print to file")
-            f_prefix.write(pref + '\t' +iri+ '\n')
+            # print("print to file")
+            # f_prefix.write(pref + '\t' +iri+ '\n')
+            d_prefix[pref] = iri.strip('<>')
+            print d_prefix
 
 
 ###### Main ###########################

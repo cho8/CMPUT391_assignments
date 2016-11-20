@@ -1,3 +1,13 @@
 /* Indexes on predicates ....and ? */
 
-/* Need indexes because many rows will have duplicate subjects and predicates for one object. Indexing will reduce the search cost. */
+/*
+We would need indexes on the predicate at the very least. Since we are using
+one table to store subject, predicate, and objects, multiple objects in an object
+list (represented by commas in the RDF) will likely have duplicates subject and
+predicate for those rows. Indexing the predicate will search through these
+duplicates at a lower cost.
+
+Similarly, if the RDFs contain many duplicates of different subjects, an index on
+the subject column will likely benefit us as well.
+
+Indexing the predicates will reduce the search cost. */
