@@ -21,7 +21,7 @@ def parsePrefix(dataLine):
             print(">> Missing opening and closing '<>'")
             return False
 
-        if uri[-2] != '/' and uri[-2] != '#':
+        if uri[-2] != '/' and uri[-2] != '#' and uri[-2] != ":":
             print(">> Missing backslash/hashtag")
             return False
 
@@ -43,8 +43,7 @@ def parse_rdf(file):
             for lin in a:
                 global counter
                 counter=counter+1
-                if counter == 232 or counter == 233:
-                    print(lin)
+                
 
                 
 
@@ -98,9 +97,10 @@ def parse_rdf(file):
                     if re_object:
                         index = re_object.start(0)
                         print(index)
-
-                    
                         curr[i]=curr[i].replace(curr[i][:index+1],d_prefix[curr[i][:index+1]])
+                    if ("'s" in curr[i]):
+                        curr[i] =  curr[i].replace("'s","s")
+
                 b.write(curr['sub']+"\t"+curr['pred']+"\t"+curr['obj']+"\n")
     a.close()
     b.close()
@@ -115,13 +115,16 @@ def write_to_db(sqldb):
 
     data = ''
 
-    with open('parsed_results.txt', 'r', encoding = utf8) as rslt:
+    with open('parsed_results.txt', 'r') as rslt:
         for lin in rslt:
             result = lin.split('\t')
             triple = '(\''+result[0]+'\',\''+result[1]+'\',\''+result[2]+'\')'
-            data = data+","+triple
-    sql_statement = "INSERT INTO rdf VALUES" + data + ";"
+            data = data+triple+','
+    sql_statement = "INSERT INTO rdf VALUES" + data[0:-1] + ";"
+    print(sql_statement)
     c.execute(sql_statement)
+    conn.commit()
+    conn.close()
 
 
 
@@ -137,7 +140,8 @@ if __name__ == "__main__":
         sqldb = argv[1]
         filename = argv[2]
         parse_rdf(filename)
-        write_to_db(sqldb);
+        write_to_db(sqldb)
+        #print(sqldb,filename)
 
 
 
