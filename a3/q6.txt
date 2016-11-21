@@ -1,52 +1,35 @@
-create table subpredobj {
+create table rdf {
 	sub text,
 	pred text,
 	obj text
 }
 
+/*
 Our strategy for storing the RDF Graph is to use a single table to store the
 subject, predicate, and objects. This way, the schema is relatively simple to
 access and to maintain. For this schema, the object types can be simply
-stored as strings without needing to detect the type. 
+stored as strings without needing to detect the type.
+*/
 
 /*
-@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
-@base <http://example.org/schemas/vehicles>
 
-:MotorVehicle a rdfs:Class.
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix contact: <http://www.w3.org/2000/10/swap/pim/contact#>.
 
-:PassengerVehicle a rdfs:Class;
-   rdfs:subClassOf :MotorVehicle.
+<http://www.w3.org/People/EM/contact#me>
+  rdf:type contact:Person;
+  contact:fullName "Eric Miller";
+  contact:mailbox <mailto:em@w3.org>;
+  contact:personalTitle "Dr.".
+<http://www.example.org/index.html> <http://purl.org/dc/elements/1.1/creator> <http://www.example.org/staffid/85740> .
+<http://www.example.org/index.html> <http://www.example.org/terms/creation-date> "August 16, 1999" .
+<http://www.example.org/index.html> <http://purl.org/dc/elements/1.1/language> "en" .
+@prefix exterms: <http://www.example.org/terms/> .
 
-:Truck a rdfs:Class;
-   rdfs:subClassOf :MotorVehicle.
-
-:Van a rdfs:Class;
-   rdfs:subClassOf :MotorVehicle.
-
-:MiniVan a rdfs:Class;
-   rdfs:subClassOf :Van.
-   rdfs:subClassOf :PassengerVehicle;
-
-:Person a rdfs:Class.
-
-xsd:integer a rdfs:Datatype.
-
-:registeredTo a rdf:Property;
-   rdfs:domain :MotorVehicle;
-   rdfs:range  :Person.
-
-:rearSeatLegRoom a rdf:Property;
-   rdfs:domain rdf:resource :MotorVehicle;
-   rdfs:range xsd:integer.
-
-:driver a rdf:Property;
-   rdfs:domain :MotorVehicle.
-
-:primaryDriver a rdf:Property;
-   rdfs:subPropertyOf :driver.
+<http://www.example.org/index.html> exterms:creation-date "August 16, 1999" .
+ex:index.html   dc:creator              exstaff:85740 .
+ex:index.html   exterms:creation-date   "August 16, 1999" .
+ex:index.html   dc:language             "en" .
 
 
 */

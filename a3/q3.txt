@@ -5,7 +5,8 @@ PREFIX dbc: <http://dbpedia.org/resource/Category:>
 PREFIX dbp: <http://dbpedia.org/property/>
 PREFIX db: <http://dbpedia.org/>
 PREFIX dbo: <http://dbpedia.org/ontology/>
-SELECT  ?team ?player ?country WHERE {
+SELECT  ?team ?player ?country
+WHERE {
   	?country dct:subject dbc:Countries_in_South_America	.				# Get countries
   	?player dbo:birthPlace ?country .									# Get players born in that country
   	?player dbo:team ?team .											# ... that played in teams
