@@ -1,4 +1,7 @@
 import sys, mmap, re
+import sqlite3
+
+
 
 curr = dict()
 temp = list()
@@ -105,8 +108,25 @@ def parse_rdf(file):
 def check(sub, pred, obj):
     pass
 
-def write_to_db(file):
-    
+def write_to_db(sqldb):
+    conn = sqlite3.connect(sqldb)
+    c = conn.cursor()
+    c.execute ('CREATE TABLE rdf (sub TEXT, pred TEXT, obj TEXT)')
+
+    data = ''
+
+    with open('parsed_results.txt', 'r', encoding = utf8) as rslt:
+        for lin in rslt:
+            result = lin.split('\t')
+            triple = '(\''+result[0]+'\',\''+result[1]+'\',\''+result[2]+'\')'
+            data = data+","+triple
+    sql_statement = "INSERT INTO rdf VALUES" + data + ";"
+    c.execute(sql_statement)
+
+
+
+
+
 
 
 
@@ -117,7 +137,10 @@ if __name__ == "__main__":
         sqldb = argv[1]
         filename = argv[2]
         parse_rdf(filename)
-        write_to_db('parsed_results.txt')
+        write_to_db(sqldb);
+
+
+
     else:
         print("Usage: "+ argv[0] + " <sql-database> <rdf>\n")
 
