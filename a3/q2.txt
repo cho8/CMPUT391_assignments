@@ -8,14 +8,16 @@ PREFIX schema: <http://schema.org/>
 SELECT distinct ?airport ?city
 WHERE {
   ?province skos:broader dbc:Airports_in_Canada_by_province_or_territory .	# Get list of provinces
-  ?apcat skos:broader ?province .											# ... and airport categories in those provinces
-  ?airport dct:subject ?apcat .												# Get airports from categories
-  {?airport dbo:icaoLocationIdentifier ?icao .}								# ... that have ICAO code
+  ?apcat skos:broader ?province .										                       	# ... and airport categories in those provinces
+  ?airport dct:subject ?apcat .												                      # Get airports from categories
+  {?airport dbo:icaoLocationIdentifier ?icao .}								              # ... that have ICAO code
   UNION
-  {?airport dbo:iataLocationIdentifier ?iata .}								# ... or an iata code
-  ?airport dbo:city ?city .													# and get the city
+  {?airport dbo:iataLocationIdentifier ?iata .}								              # ... or an iata code
+  ?airport dbo:city ?city .													                        # and get the airport's city/region
   ?city rdf:type schema:Place
 
-  FILTER(regex(str(?airport),'International'))								# International airports
-
+  FILTER(regex(str(?airport),'International'))								              # International airport names
 }
+
+# For this question we have assumed that all international airports have
+# "international" in their name and have an IATA or ICAO code

@@ -4,14 +4,12 @@ create table rdf {
 	obj text
 }
 
-/*
-Our strategy for storing the RDF Graph is to use a single table to store the
-subject, predicate, and objects. This way, the schema is relatively simple to
-access and to maintain. For this schema, the object types can be simply
-stored as strings without needing to detect the type.
-*/
 
-/*
+# Our strategy for storing the RDF Graph is to use a single table to store the
+# subject, predicate, and objects. This way, the schema is relatively simple to
+# access and to maintain. For this schema, the object types can be simply
+# stored as strings without needing to detect the type.
+
 
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
 @prefix contact: <http://www.w3.org/2000/10/swap/pim/contact#>.
@@ -30,6 +28,3 @@ stored as strings without needing to detect the type.
 ex:index.html   dc:creator              exstaff:85740 .
 ex:index.html   exterms:creation-date   "August 16, 1999" .
 ex:index.html   dc:language             "en" .
-
-
-*/

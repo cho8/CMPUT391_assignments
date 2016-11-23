@@ -6,7 +6,8 @@ PREFIX dbo: <http://dbpedia.org/ontology/>
 PREFIX db: <http://dbpedia.org/>
 SELECT ?team, (count(?final) as ?finalscount) WHERE {
   ?final dct:subject dbc:FIFA_World_Cup_finals .		# World cup finals
-  ?final dbo:team ?team									# ... that hosted the teams
+  ?final dbo:team ?team									            # ... that hosted such teams
+                                                    # count those teams
 }
 GROUP BY ?team
 HAVING (count(?final) > 3)
