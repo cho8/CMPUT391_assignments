@@ -12,7 +12,12 @@ def parsePrefix(dataLine):
     checks prefix and then parses it before storing it in d_prefix
     """
     dataLine = dataLine.replace(' ', '\t');
-    tag, pref, uri, term= dataLine.split('\t');
+    try:
+        tag, pref, uri, term= dataLine.split('\t');
+        break;
+    except ValueError:
+        print(">> Invalid prefix format")
+
     # print(tag, pref, iri, term);
     if tag =='@prefix' :
         # check the prefix
