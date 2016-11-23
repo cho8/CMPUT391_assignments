@@ -1,11 +1,10 @@
-import sys, mmap, re
+import sys, re
 import sqlite3
-
 
 
 curr = dict() #stores the curr subj, pred, obj values
 temp = list() #list that stores the parsed string
-counter = 0 
+counter = 0
 d_prefix = {} # dictionary that will store prefix mappings
 
 def parsePrefix(dataLine):
@@ -57,7 +56,7 @@ def parse_rdf(file):
                 #ignoring foreign language tags
                 if "@" in lin and ('@en' not in lin):
                     continue
-                
+
                 #getting rid of newline and english tag identifier
                 temp = lin.replace('\n','').replace('@en','').split("\t")
 
@@ -73,18 +72,18 @@ def parse_rdf(file):
                     curr['sub']=temp[0]
                     curr['pred']=temp[1]
                     curr['obj']=temp[2][:-2]
-                    
+
                 elif (flag == ';'):
                     #print('case 2')
                     flag = temp[2][-1]
                     curr['pred'] = temp[1]
                     curr['obj'] = temp[2][:-2]
-                    
+
                 elif (flag == ','):
                     #print('case 3')
                     flag = temp[2][-1]
                     curr['obj'] = temp[2][:-2]
-                    
+
                 else:
                     print("no match", temp)
                     return False
@@ -112,7 +111,7 @@ def check(sub, pred, obj):
         if obj[-1]!='"':
             print("checking failed, unclosed quotations")
             return False
-    
+
 
 
 def two_same(string)
@@ -143,12 +142,6 @@ def write_to_db(sqldb):
     conn.close()
 
 
-
-
-
-
-
-
 ###### Main ###########################
 if __name__ == "__main__":
     argv = sys.argv
@@ -158,8 +151,6 @@ if __name__ == "__main__":
         parse_rdf(filename)
         write_to_db(sqldb)
         #print(sqldb,filename)
-
-
 
     else:
         print("Usage: "+ argv[0] + " <sql-database> <rdf>\n")

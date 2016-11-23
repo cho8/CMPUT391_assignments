@@ -8,8 +8,11 @@ PREFIX dbo: <http://dbpedia.org/ontology/>
 SELECT  ?team ?player ?country
 WHERE {
   	?country dct:subject dbc:Countries_in_South_America	.				# Get countries
-  	?player dbo:birthPlace ?country .									# Get players born in that country
-  	?player dbo:team ?team .											# ... that played in teams
-	?team dct:subject dbc:La_Liga_clubs .								# ... in La Liga
+  	?player dbo:birthPlace ?country .									          # Get players born in that country
+  	?player dbo:team ?team .											              # ... that played in teams
+	  ?team dct:subject dbc:La_Liga_clubs .						            # ... in La Liga
     ?team dct:subject dbc:Unrelegated_association_football_clubs .		# ... that are unrelegated
 } GROUP BY ?country
+
+# For this question we have assumed that "South American" players refer
+# to players who were born in a country in South America
