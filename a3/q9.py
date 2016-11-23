@@ -3,12 +3,15 @@ import sqlite3
 
 
 
-curr = dict()
-temp = list()
-counter = 0
-d_prefix = {}
+curr = dict() #stores the curr subj, pred, obj values
+temp = list() #list that stores the parsed string
+counter = 0 
+d_prefix = {} # dictionary that will store prefix mappings
 
 def parsePrefix(dataLine):
+    """
+    checks prefix and then parses it before storing it in d_prefix
+    """
     dataLine = dataLine.replace(' ', '\t');
     tag, pref, uri, term= dataLine.split('\t');
     # print(tag, pref, iri, term);
@@ -22,16 +25,16 @@ def parsePrefix(dataLine):
             return False
 
         if uri[-2] != '/' and uri[-2] != '#' and uri[-2] != ":":
-            print(">> Missing backslash/hashtag")
+            print(">> Missing backslash/hashtag/colon")
             return False
 
 
         # parse the iri
         if term.strip('\n') == '.':
-            # print("print to file")
-            # f_prefix.write(pref + '\t' +iri+ '\n')
             d_prefix[pref] = uri.strip('<>')
-            #print (d_prefix)
+        else:
+            print(">> Missing finalizing period")
+            return False
         return True
 
 
@@ -41,14 +44,11 @@ def parse_rdf(file):
     with open (file, "r", encoding = 'utf8') as a:
         with open ("parsed_results.txt", "w", encoding = 'utf8') as b:
             for lin in a:
-                global counter
-                counter=counter+1
-                
-
-                
+                # global counter
+                # counter=counter+1
 
                 #recording prefix
-                if "@" in lin and ('@prefix' in lin):
+                if (("@" in lin) and ('@prefix' in lin)):
                     if parsePrefix(lin) != True:
                         print("error, incorrectly formated prefix")
                         return False
@@ -87,28 +87,44 @@ def parse_rdf(file):
                     
                 else:
                     print("no match", temp)
+                    return False
 
                 check(curr['sub'], curr['pred'], curr['obj'])
                 for i in curr:
                     if ('http' in curr[i]) or ('date' in curr[i]) or ('float' in curr[i]) or ('^' in curr[i]) or ('_:'in curr[i]):
                         continue
 
+                    #replacing the prefix tag with appropriate actual URIs
                     re_object = re.search(':',curr[i])
                     if re_object:
                         index = re_object.start(0)
                         print(index)
                         curr[i]=curr[i].replace(curr[i][:index+1],d_prefix[curr[i][:index+1]])
                     if ("'s" in curr[i]):
-                        curr[i] =  curr[i].replace("'s","s")
+                        curr[i] =  curr[i].replace("'s","QUOTE")
 
                 b.write(curr['sub']+"\t"+curr['pred']+"\t"+curr['obj']+"\n")
     a.close()
     b.close()
 
 def check(sub, pred, obj):
-    pass
+    if obj[0]=='"':
+        if obj[-1]!='"':
+            print("checking failed, unclosed quotations")
+            return False
+    
+
+
+def two_same(string)
+   for i in range(len(string)-1):
+      if string[i] == string[i+1]:
+         return True
+   return False
 
 def write_to_db(sqldb):
+    """
+    Writes to DB
+    """
     conn = sqlite3.connect(sqldb)
     c = conn.cursor()
     c.execute ('CREATE TABLE rdf (sub TEXT, pred TEXT, obj TEXT)')
