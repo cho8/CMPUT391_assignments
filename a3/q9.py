@@ -1,9 +1,15 @@
 import sys, mmap, re
+import sqlite3
+conn = None             # sqlite3 db connection
+c = None                # sqlite3 db cursor
 
 curr = dict()
 temp = list()
-
 d_prefix = {}
+
+def dbInsert():
+    c.execute("INSERT INTO rdf VALUES ('{}','{}','{}')".format(curr['sub'], curr['pred'], curr['obj'])
+
 
 def parsePrefix(dataLine):
     dataLine = dataLine.replace(' ', '\t');
@@ -34,6 +40,7 @@ def parse_rdf():
 
             if "@" in lin and ('@prefix' in lin):
                 parsePrefix(lin);
+                continue
             # print(lin)
             # temp = lin.replace("\t", '\n').split()
             temp = lin.replace('\n','').replace('@en','').split("\t")
@@ -86,10 +93,15 @@ def check(sub, pred, obj):
 ###### Main ###########################
 if __name__ == "__main__":
     argv = sys.argv
+
     if len(argv) == 3:
         sqldb = argv[1]
         filename = argv[2]
-        readDataFile(filename)
+        conn = sqlite3.connect(sqldb)
+        c = conn.cursor()
+        parse_rdf(filename)
+        conn.close()
+
     else:
         print("Usage: "+ argv[0] + " <sql-database> <rdf>\n")
 
