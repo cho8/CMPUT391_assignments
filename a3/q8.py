@@ -24,6 +24,9 @@ def parsePrefix(dataLine):
         if pref[-1] != ':':
             print(">> Missing colon")
             return False        # Error! Missing Colon
+        if ' ' in uri:
+            print(">> Space in provided prefix URI")
+            return False
         if uri[0]!='<' and uri[-1]!='>':
             print(">> Missing opening and closing '<>'")
             return False
