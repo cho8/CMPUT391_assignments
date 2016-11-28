@@ -6,8 +6,8 @@ curr = dict() #stores the curr subj, pred, obj values
 temp = list() #list that stores the parsed string
 counter = 0
 d_prefix = {} # dictionary that will store prefix mappings
-select = []
-pattern = []
+select = [] # variables
+pattern_list = [] # collection of patterns to retrieve
 
 def parsePrefix(dataLine):
     """
@@ -59,6 +59,9 @@ def parsePrefix(dataLine):
         return True
 
 def parseSelect(dataLine):
+    """
+    Parses and stores the variables used in select
+    """
     print("in select")
     dataLine = dataLine.replace(' ', '\t')
     statement = dataLine.split('\t')
@@ -99,6 +102,7 @@ def parse_sparql(file):
                         return False
                     continue
 
+                # Parse WHERE patterns
                 elif ("WHERE" in lin):
                     dataline = lin.replace(' ', '\t').strip('\n')
                     statement = dataline.split('\t')
@@ -106,75 +110,44 @@ def parse_sparql(file):
                         # read the next line after where
                         dataline = a.readline().strip('\t\n ')
                         statement = dataline.replace(' ','\t').split('\t')
+
                         while (statement[0] != '}'):    # while within WHERE block
                             # map prefixes
-                            print(statement)
+                            i = 0;
                             for s in statement:
                                 m = re.search(':', s)
+
+                                # TODO Filter
+
+                                # If a prefix is used
                                 if m :
                                     prefix = s[:m.start(0)+1]
+
                                     if not prefix:
                                         print(">> Undefined prefix '{}'".format(prefix))
                                         return false
 
                                     s=s.replace(prefix, d_prefix[prefix])
+                                    statement[i]=s
+                                i+=1
 
-                            pattern.append({'sub': statement[0], 'pred':statement[1], 'object':statement[2]})
-                            # print(pattern)
+                            # find if more than one variable in pattern_stack, rearrange stack
+                            num_var = sum(1 for s in statement if '?' in s)
+                            if num_var <= 1:
+                                pattern_list.append({'sub': statement[0], 'pred':statement[1], 'object':statement[2]})
+                            else:
+                                pattern_list.insert(0,{'sub': statement[0], 'pred':statement[1], 'object':statement[2]})
+                            print(pattern_list)
 
+                            # read the next line
                             dataline = a.readline().strip('\t\n ')
                             statement = dataline.replace(' ','\t').split('\t')
 
-    #             #ignoring foreign language tags
-    #             if "@" in lin and ('@en' not in lin):
-    #                 continue
-    #
-    #             #getting rid of newline and english tag identifier
-    #             temp = lin.replace('\n','').replace('@en','').split("\t")
-    #
-    #
-    #             if len(temp) != 3:
-    #                print("error because len(temp) is not 3");
-    #                return False
-    #
-    #
-    #             if (temp[0] and temp[1] and temp[2]):
-    #                 #print('case 1')
-    #                 flag = temp[2][-1]
-    #                 curr['sub']=temp[0]
-    #                 curr['pred']=temp[1]
-    #                 curr['obj']=temp[2][:-2]
-    #
-    #             elif (flag == ';'):
-    #                 #print('case 2')
-    #                 flag = temp[2][-1]
-    #                 curr['pred'] = temp[1]
-    #                 curr['obj'] = temp[2][:-2]
-    #
-    #             elif (flag == ','):
-    #                 #print('case 3')
-    #                 flag = temp[2][-1]
-    #                 curr['obj'] = temp[2][:-2]
-    #
-    #             else:
-    #                 print("no match", temp)
-    #                 return False
-    #
-    #             check(curr['sub'], curr['pred'], curr['obj'])
-    #             for i in curr:
-    #                 if ('http' in curr[i]) or ('date' in curr[i]) or ('float' in curr[i]) or ('^' in curr[i]) or ('_:'in curr[i]):
-    #                     continue
-    #
-    #                 #replacing the prefix tag with appropriate actual URIs
-    #                 re_object = re.search(':',curr[i])
-    #                 if re_object:
-    #                     index = re_object.start(0)
-    #                     print(index)
-    #                     curr[i]=curr[i].replace(curr[i][:index+1],d_prefix[curr[i][:index+1]])
-    #                 if ("'s" in curr[i]):
-    #                     curr[i] =  curr[i].replace("'s","QUOTE")
-    #
-    #             b.write(curr['sub']+"\t"+curr['pred']+"\t"+curr['obj']+"\n")
+                        # end while
+                    # end elif WHERE
+                # EOF, get the data from DB.
+                # end function
+
     a.close()
     # b.close()
 
@@ -213,6 +186,20 @@ def write_to_db(sqldb):
     conn.commit()
     conn.close()
 
+def read_from_db(sqldb):
+    """
+    Writes to DB
+    """
+    conn = sqlite3.connect(sqldb)
+    c = conn.cursor()
+    query = 'SELECT * FROM rdf'
+    # TODO appen query with where clauses
+
+    c.execute (query)
+
+    conn.commit()
+    conn.close()
+
 
 ###### Main ###########################
 if __name__ == "__main__":
@@ -221,7 +208,7 @@ if __name__ == "__main__":
         sqldb = argv[1]
         filename = argv[2]
         parse_sparql(filename)
-        # write_to_db(sqldb)
+        # read_from_db(sqldb)
         #print(sqldb,filename)
 
     else:
