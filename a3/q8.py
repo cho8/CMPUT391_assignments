@@ -77,20 +77,20 @@ def parse_rdf(file):
                 if (temp[0] and temp[1] and temp[2]):
                     #print('case 1')
                     flag = temp[2][-1]
-                    curr['sub']=temp[0]
-                    curr['pred']=temp[1]
-                    curr['obj']=temp[2][:-2]
+                    curr['sub']=temp[0].strip('\n<>')
+                    curr['pred']=temp[1].strip('\n<>')
+                    curr['obj']=temp[2][:-2].strip('\n<>')
 
                 elif (flag == ';'):
                     #print('case 2')
                     flag = temp[2][-1]
-                    curr['pred'] = temp[1]
-                    curr['obj'] = temp[2][:-2]
+                    curr['pred'] = temp[1].strip('\n<>')
+                    curr['obj'] = temp[2][:-2].strip('\n<>')
 
                 elif (flag == ','):
                     #print('case 3')
                     flag = temp[2][-1]
-                    curr['obj'] = temp[2][:-2]
+                    curr['obj'] = temp[2][:-2].strip('\n<>')
 
                 else:
                     print("no match", temp)
@@ -140,6 +140,7 @@ def write_to_db(sqldb):
 
     with open('parsed_results.txt', 'r') as rslt:
         for lin in rslt:
+            lin=lin.strip('\n')
             result = lin.split('\t')
             triple = '(\''+result[0]+'\',\''+result[1]+'\',\''+result[2]+'\')'
             data = data+triple+','
