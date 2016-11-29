@@ -52,7 +52,7 @@ def parsePrefix(dataLine):
         # parse the iri
         if pref and uri:
             d_prefix[pref] = uri.strip('<>')
-            print(d_prefix);
+            # print(d_prefix)
         else:
             print(">> Malformed prefix declaration")
             return False
@@ -62,7 +62,6 @@ def parseSelect(dataLine):
     """
     Parses and stores the variables used in select
     """
-    print("in select")
     dataLine = dataLine.replace(' ', '\t')
     statement = dataLine.split('\t')
 
@@ -77,7 +76,7 @@ def parseSelect(dataLine):
                 elif s== '':
                     continue
                 select.append(s.strip('\n'))
-                print(select)
+                # print(select)
             return True
 
 
@@ -137,7 +136,7 @@ def parse_sparql(file):
                                 pattern_list.append({'sub': statement[0], 'pred':statement[1], 'object':statement[2]})
                             else:
                                 pattern_list.insert(0,{'sub': statement[0], 'pred':statement[1], 'object':statement[2]})
-                            print(pattern_list)
+                            # print(pattern_list)
 
                             # read the next line
                             dataline = a.readline().strip('\t\n ')
@@ -181,7 +180,7 @@ def write_to_db(sqldb):
             triple = '(\''+result[0]+'\',\''+result[1]+'\',\''+result[2]+'\')'
             data = data+triple+','
     sql_statement = "INSERT INTO rdf VALUES" + data[0:-1] + ";"
-    print(sql_statement)
+    # print(sql_statement)
     c.execute(sql_statement)
     conn.commit()
     conn.close()
@@ -195,7 +194,8 @@ def read_from_db(sqldb):
     query = 'SELECT * FROM rdf'
     # TODO appen query with where clauses
 
-    c.execute (query)
+    for row in c.execute(query):
+        print(row)
 
     conn.commit()
     conn.close()
@@ -208,7 +208,7 @@ if __name__ == "__main__":
         sqldb = argv[1]
         filename = argv[2]
         parse_sparql(filename)
-        # read_from_db(sqldb)
+        read_from_db(sqldb)
         #print(sqldb,filename)
 
     else:

@@ -12,9 +12,9 @@ def parsePrefix(dataLine):
     checks prefix and then parses it before storing it in d_prefix
     """
     dataLine = dataLine.replace(' ', '\t');
+    tag = pref = uri = term = None
     try:
         tag, pref, uri, term= dataLine.split('\t');
-        break;
     except ValueError:
         print(">> Invalid prefix format")
 
@@ -122,7 +122,7 @@ def check(sub, pred, obj):
 
 
 
-def two_same(string)
+def two_same(string):
    for i in range(len(string)-1):
       if string[i] == string[i+1]:
          return True
@@ -134,7 +134,7 @@ def write_to_db(sqldb):
     """
     conn = sqlite3.connect(sqldb)
     c = conn.cursor()
-    c.execute ('CREATE TABLE rdf (sub TEXT, pred TEXT, obj TEXT)')
+    # c.execute ('CREATE TABLE rdf (sub TEXT, pred TEXT, obj TEXT);')
 
     data = ''
 
