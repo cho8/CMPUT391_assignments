@@ -4,10 +4,15 @@ CREATE INDEX subpred_index ON rdf(sub, pred);
 We would need indexes on the predicate at the very least. Since we are using
 one table to store subject, predicate, and objects, multiple objects in an object
 list (represented by commas in the RDF) will likely have duplicates subject and
-predicate for those rows. Indexing the predicate will search through these
-duplicates at a lower cost.
+predicate for those rows. It is likely that this design for storing subjects,
+predicates, and objects will inflate the single table if the rdf graph
+contains many edges for one resources, so indexing here will likely reduce the cost.
 
 Similarly, if the RDFs contain many duplicates of different subjects, an index on
-the subject column will likely benefit us as well.
+the subject column will likely benefit us as well. For the case of the Edmonton
+RDF graph that was provided, having an index on the subject may be excessive, since
+there is only one subject. Indexing on the predicate is more useful here. However
+if our table stored many different resources, then indexing on the subject
+column would be necessary.
 
-Indexing the predicates will reduce the search cost. */
+*/
