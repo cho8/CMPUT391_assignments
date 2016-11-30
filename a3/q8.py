@@ -46,7 +46,6 @@ def parse_rdf(file):
     with open (file, "r", encoding = 'utf8') as a:
         with open ("parsed_results.txt", "w", encoding = 'utf8') as b:
             for lin in a:
-                print(flag,line_number)
                 line_number = line_number+1
                 # global counter
                 # counter=counter+1
@@ -181,21 +180,13 @@ def check(sub, pred, obj):
 
 
 
-
-
-def two_same(string):
-   for i in range(len(string)-1):
-      if string[i] == string[i+1]:
-         return True
-   return False
-
 def write_to_db(sqldb):
     """
     Writes to DB
     """
     conn = sqlite3.connect(sqldb)
     c = conn.cursor()
-    #c.execute ('CREATE TABLE rdf (sub TEXT, pred TEXT, obj TEXT)')
+    c.execute ('CREATE TABLE rdf (sub TEXT, pred TEXT, obj TEXT)')
 
     data = ''
 
@@ -220,8 +211,10 @@ if __name__ == "__main__":
         if (parse_rdf(filename)):
             print("processing passed, writing to db")
             write_to_db(sqldb)
+            print("write complete")
         else:
             print("error processing the document")
+
     else:
         print("Usage: "+ argv[0] + " <sql-database> <rdf>\n")
 
