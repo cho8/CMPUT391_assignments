@@ -1,0 +1,34 @@
+CMPUT 391 Assignment 3
+Done by: Avery Tan, Christina Ho
+
+This submission includes the following files:
+*readme.txt
+*q0.txt
+*q1.txt
+*q2.txt
+*q3.txt
+*q4.txt
+*q5.txt
+*q6.txt
+*q7.txt
+*q8.py
+*q9.py
+*rdf.db
+
+
+
+Instructions for code us:
+*q0-q5 Use yasgui or any other sparql gui to execute these queries
+
+*q8.py in the command line, navigate to the directory containing the submission. 
+         Type in 'python3 q8.py <database name> <filename>' where <database name> is 
+         the desired name of the database and <filename> is the rdf graph in turtle
+         format.
+
+*q9.py  in the command line, navigate to the directory containing the submission. 
+         Type in 'python3 q8.py <database name> <filename>' where <database name> is 
+         the desired name of the database and <filename> is the sparql query in turtle format.
+
+
+
+
