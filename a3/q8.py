@@ -194,7 +194,7 @@ def write_to_db(sqldb):
     """
     conn = sqlite3.connect(sqldb)
     c = conn.cursor()
-    # c.execute ('CREATE TABLE rdf (sub TEXT, pred TEXT, obj TEXT);')
+    c.execute ('CREATE TABLE rdf (sub TEXT, pred TEXT, obj TEXT);')
 
     data = ''
 
