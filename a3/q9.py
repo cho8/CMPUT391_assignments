@@ -1,16 +1,13 @@
 import sys, re
 import sqlite3
 
-
-curr = dict() #stores the curr subj, pred, obj values
-temp = list() #list that stores the parsed string
-counter = 0
 d_prefix = {} # dictionary that will store prefix mappings
 select = {} # variables
 pattern_list = [] # collection of patterns to retrieve
-full_result = None # set of tuples of sparql query result
+variables = [] # queried variables
+relation = {} # relationship between variables
 
-def parsePrefix(dataLine):
+def parse_prefix(dataLine):
     """
     checks prefix and then parses it before storing it in d_prefix
     """
@@ -59,7 +56,7 @@ def parsePrefix(dataLine):
             return False
         return True
 
-def parseSelect(dataLine):
+def parse_select(dataLine):
     """
     Parses and stores the variables used in select
     """
@@ -76,9 +73,42 @@ def parseSelect(dataLine):
                     return
                 elif s== '':
                     continue
-                select[s.strip('\n')]=set();
+                select[s.strip('\n')]='';
+                variables.append(s.strip('\n'))
+
                 print('SELECT: ',select)
+                print('VARIABLES: ', variables)
             return True
+
+def compile_patterns(dataLine):
+    i = 0;
+    if (dataLine==''):
+        return
+
+    for s in dataLine:
+        m = re.search(':', s)
+
+        # TODO Filter
+
+        # If a prefix is used
+        if m :
+            prefix = s[:m.start(0)+1]
+
+            if not prefix:
+                print(">> Undefined prefix '{}'".format(prefix))
+                return false
+
+            s=s.replace(prefix, d_prefix[prefix])
+            dataLine[i]=s
+        i+=1
+
+    # find if more than one variable in pattern_stack, rearrange stack
+    num_var = sum(1 for s in dataLine if '?' in s)
+    if num_var == 1:
+        pattern_list.append({'sub': dataLine[0], 'pred':dataLine[1], 'obj':dataLine[2]})
+    else:
+        pattern_list.insert(0,{'sub':dataLine[0], 'pred':dataLine[1], 'obj':dataLine[2]})
+
 
 
 def parse_sparql(file):
@@ -91,13 +121,13 @@ def parse_sparql(file):
 
                 #recording prefix
                 if ("PREFIX" in lin):
-                    if parsePrefix(lin) != True:
+                    if parse_prefix(lin) != True:
                         print("error, incorrectly formatted prefix")
                         return False
                     continue
 
                 elif ("SELECT" in lin):
-                    if parseSelect(lin) != True:
+                    if parse_select(lin) != True:
                         print("error, incorrectly formatted select statement")
                         return False
                     continue
@@ -112,35 +142,8 @@ def parse_sparql(file):
                         statement = dataline.replace(' ','\t').split('\t')
 
                         while (statement[0] != '}'):    # while within WHERE block
-                            # map prefixes
-                            i = 0;
-                            if (statement==''):
-                                continue
 
-                            for s in statement:
-                                m = re.search(':', s)
-
-                                # TODO Filter
-
-                                # If a prefix is used
-                                if m :
-                                    prefix = s[:m.start(0)+1]
-
-                                    if not prefix:
-                                        print(">> Undefined prefix '{}'".format(prefix))
-                                        return false
-
-                                    s=s.replace(prefix, d_prefix[prefix])
-                                    statement[i]=s
-                                i+=1
-
-                            # find if more than one variable in pattern_stack, rearrange stack
-                            num_var = sum(1 for s in statement if '?' in s)
-                            if num_var == 1:
-                                pattern_list.append({'sub': statement[0], 'pred':statement[1], 'obj':statement[2]})
-                            else:
-                                pattern_list.insert(0,{'sub': statement[0], 'pred':statement[1], 'obj':statement[2]})
-                            # print(pattern_list)
+                            compile_patterns(statement)
 
                             # read the next line
                             dataline = a.readline().strip('\t\n ')
@@ -153,6 +156,58 @@ def parse_sparql(file):
 
     a.close()
     # b.close()
+
+def build_query():
+    basequery = 'SELECT * FROM rdf'
+    query= ''
+    while pattern_list:
+        print('############################')
+        pattern = pattern_list.pop()
+        print('PATTERN: ', pattern)
+        var = [i for i in pattern.items() if '?' in i[1]] # vars
+        defd = [i for i in pattern.items() if not '?' in i[1]]  # defined uris
+        print("stuff", var)
+
+        # Only one variable
+        if len(var)==1:
+            var = var[0]    # get rid of list characteristic
+            print("SINGLE VAR --")
+
+            query = basequery.replace('*', '{}'.format(var[0]))
+            # build the query using other triple elements
+            query += " where {}=\'{}\' and {}=\'{}\'".format(defd[0][0], defd[0][1], defd[1][0], defd[1][1])
+
+            print('QUERY: ',query)
+
+            # # associate query with this variable (or intersect it with existing one)
+            if (select[var[1]]):
+                select[var[1]] += ' intersect ' + query
+            else:
+                select[var[1]]= query
+            print(select)
+
+
+        # Two var in one pattern
+        elif len(var) == 2:
+            print("DOUBLE VAR --")
+            print(var)
+
+            query = basequery.replace('*', '{}, {}'.format(var[0][0], var[1][0]))
+            # query = basequery
+            # find the triple associated with this relationship
+            # include the criteria for the known uri
+            query += " where {}=\'{}\'".format(defd[0][0], defd[0][1])
+            print(query)
+            # append related variables
+            for v in var:
+                if select[v[1]]:
+                    query += " and {} in ({})".format(v[0], select[v[1]])
+                else:
+                    query += " and {} not in ({})".format(v[0], select[v[1]])
+            relation[(var[0][1],var[1][1])] = query
+            print(relation)
+
+
 
 def check(sub, pred, obj):
     if obj[0]=='"':
@@ -195,100 +250,15 @@ def read_from_db(sqldb):
     """
     conn = sqlite3.connect(sqldb)
     c = conn.cursor()
-    basequery = 'SELECT * FROM rdf'
-    # TODO append query with where clauses
-    while pattern_list:
-        print('############################')
-        pattern = pattern_list.pop()
-        print('PATTERN: ', pattern)
-        var = [i for i in pattern.items() if '?' in i[1]]
-        # print("stuff", var)
+    res = []
 
-        # Only one variable
-        if len(var)==1:
-            print("SINGLE VAR --")
-            # Case 1: var is sub
-            if var[0][0]=='sub':
-                query = basequery.replace('*', var[0][0])
-                query = query +" where pred=? and obj=?;"
-                c.execute(query, (pattern['pred'], pattern['obj']))
-                output = c.fetchall()
-                print('QUERY: ',query)
-                print('OUTPUT: ',output)
+    for k in relation.keys():
+        if list(k)==variables:
+            res = c.execute(relation[k])
 
-                # if we don't have this subject, save it
-                if (select[var[0][1]]):
-                    select[var[0][1]]=select[var[0][1]].intersect(set([i[0] for i in output]))
-                    pass
-                else:
-                    select[var[0][1]]=set([i[0] for i in output])
-                    print(select)
-                    pass
+    for row in res:
+        print(row)
 
-            # Case 2: var is obj
-            elif var[0][0]=='obj':
-                # query = basequery.replace('*', var[0][0])
-                query = basequery +" where pred=? and sub=?;"
-                c.execute(query, (pattern['pred'], pattern['sub']))
-
-
-                # if we don't have this object, save it
-                if (select[var[0][1]]):
-                    # select[var[0][1]]=select[var[0][1]].intersect(set(c.execute(query)))
-                    pass
-                else:
-                    # select[var[0][1]]=set(c.execute(query))
-                    pass
-
-            # Case 3: var is pred
-            elif var[0][0]=='pred':
-                 query = basequery +" where pred=? and sub=?;"
-                 c.execute(query, (pattern['pred'], pattern['sub']))
-
-            # print(select)
-            # print('QUERY :', query)
-
-
-        # Two var in one pattern
-        elif len(var) == 2:
-            print("DOUBLE VAR --")
-            # var1 is subject, var2 is object
-            # separate out spo
-            sub = [i for i in pattern.items() if i[0]=='sub'][0]    # ( 'sub', '?var')
-            obj = [i for i in pattern.items() if i[0]=='obj'][0]
-            pred = [i for i in pattern.items() if i[0]=='pred'][0]
-            # select * from rdf where
-            print('SPO :', sub, pred, obj)
-
-            if not sub or not obj:
-                print ('>> Pattern parse failure')
-                return False;
-
-            # Get all the sub, obj pairs, assuming var in sub and obj
-            c.execute('select sub, obj from rdf where pred=?', (pred[1],))
-            output = c.fetchall()
-            print('OUTPUT: ',output)
-
-            # Relate selected variables (filter out all the stuff we didn't select before)
-            # build result tuples
-
-            # Case 1, obj list is empty, get all results with sub constraint
-            if not select[obj[1]] and select[sub[1]]:
-                output = [o for o in output if o[0] in select[sub[1]]]
-            # Case 2, sub list is empty, get all results with obj constraint
-            elif not select[sub[0][1]] and select[obj[0][1]]:
-                output = [o for o in output if o[0] in select[obj[1]]]
-            # Case 3, sub list and obj list constrain
-            elif select[sub[0][1]] and select [obj[0][1]]:
-                output = [o for o in output if o[0] in select[sub[1]] and o[1] in select[obj[1]]]
-
-            global full_result;
-            if full_result:
-                full_result.intersect(set(output))
-            else:
-                full_result = set(output)
-
-        # END two var pattern
     conn.commit()
     conn.close()
 
@@ -305,8 +275,9 @@ if __name__ == "__main__":
         sqldb = argv[1]
         filename = argv[2]
         parse_sparql(filename)
+        build_query();
         read_from_db(sqldb)
-        print_result();
+        # print_result();
         #print(sqldb,filename)
 
     else:
