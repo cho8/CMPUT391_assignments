@@ -5,26 +5,48 @@ create table rdf (
 );
 
 
-# Our strategy for storing the RDF Graph is to use a single table to store the
-# subject, predicate, and objects. This way, the schema is relatively simple to
-# access and to maintain. For this schema, the object types can be simply
-# stored as strings without needing to detect the type.
+Our strategy for storing the RDF Graph is to use a single table to store the
+subject, predicate, and objects, with columns representing each respectively
+This way, the schema is relatively simple to store after parsing
+For this schema, the object types can be simply
+stored as strings without needing to detect the type initially.
+When using FILTER in SPARQL, we will need to convert the data type based on
+the type it is stored as (based on the predicate). Prefixes will be remapped to
+their original URIs in each triple.
+
+The following is an example RDF
 
 
-@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
-@prefix contact: <http://www.w3.org/2000/10/swap/pim/contact#>.
-
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix contact: <http://www.w3.org/2000/10/swap/pim/contact#> .
 <http://www.w3.org/People/EM/contact#me>
   rdf:type contact:Person;
-  contact:fullName "Eric Miller";
+  contact:fullName "John Doe";
   contact:mailbox <mailto:em@w3.org>;
-  contact:personalTitle "Dr.".
+  contact:personalTitle "Mr.".
 <http://www.example.org/index.html> <http://purl.org/dc/elements/1.1/creator> <http://www.example.org/staffid/85740> .
-<http://www.example.org/index.html> <http://www.example.org/terms/creation-date> "August 16, 1999" .
+<http://www.example.org/index.html> <http://www.example.org/terms/creation-date> "August 16, 1989" .
 <http://www.example.org/index.html> <http://purl.org/dc/elements/1.1/language> "en" .
-@prefix exterms: <http://www.example.org/terms/> .
 
+@prefix exterms: <http://www.example.org/terms/> .
+@prefix ex: <http://www.example.org/> .
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
+@prefix exstaff: <http://www.example.org/staffid/> .
 <http://www.example.org/index.html> exterms:creation-date "August 16, 1999" .
 ex:index.html   dc:creator              exstaff:85740 .
 ex:index.html   exterms:creation-date   "August 16, 1999" .
 ex:index.html   dc:language             "en" .
+
+The schema for our relational db:
+
+sub | pred | obj
+http://www.w3.org/People/EM/contact#me | http://www.w3.org/1999/02/22-rdf-syntax-ns#type | http://www.w3.org/2000/10/swap/pim/contact#Person
+http://www.w3.org/People/EM/contact#me | http://www.w3.org/2000/10/swap/pim/contact#fullName | "John Doe"
+http://www.w3.org/People/EM/contact#me | http://www.w3.org/2000/10/swap/pim/contact#mailbox | mailto:em@w3.org
+http://www.w3.org/People/EM/contact#me | http://www.w3.org/2000/10/swap/pim/contact#personalTitle | "Mr."
+http://www.example.org/index.html | http://purl.org/dc/elements/1.1/creator | http://www.example.org/staffid/85740
+http://www.example.org/index.html | http://www.example.org/terms/creation-date | "August 16, 1989" .
+http://www.example.org/index.html | http://purl.org/dc/elements/1.1/language | "en" .
+http://www.example.org/index.html | http://www.example.org/terms/creation-date | "August 16, 1999"
+http://www.example.org/index.html |  http://purl.org/dc/elements/1.1/ | http://www.example.org/staffid/85740 .
+http://www.example.org/index.html |  http://www.example.org/terms/creation-date | "August 16, 1999" .

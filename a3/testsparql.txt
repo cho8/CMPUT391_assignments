@@ -3,8 +3,9 @@ PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX dct: <http://purl.org/dc/terms/>
 PREFIX dbp: <http://dbpedia.org/property/>
 PREFIX dbc: <http://dbpedia.org/resource/Category:>
-SELECT ?city ?area
+SELECT ?area ?city 
 WHERE {
 	?city dct:subject dbc:Populated_places_established_in_1904 .
 	?city dbp:areaMetroKm ?area .
+	
 }

@@ -8,6 +8,7 @@ select = {} # variables
 pattern_list = [] # collection of patterns to retrieve
 variables = [] # queried variables
 relation = {} # relationship between variables
+end_result = [] # holder of results
 
 def open_file(file):
     """
@@ -99,6 +100,9 @@ def parse_select(dataLine):
             return True
 
 def parse_where(dataLine):
+    """
+    Parse the where close of the sparql query, including patterns
+    """
     dataline = dataLine.replace(' ', '\t')
     statement = dataline.split('\t')
     if "WHERE" in dataline and statement[-1]=='{':
@@ -127,6 +131,9 @@ def parse_where(dataLine):
 
 
 def compile_patterns(dataLine):
+    """
+    Compiles patterns and sorts them into processing order
+    """
     # print(dataLine)
     i = 0;
 
@@ -139,14 +146,15 @@ def compile_patterns(dataLine):
         if m :
             prefix = s[:m.start(0)+1]
 
-            if not prefix:
+            if not prefix or not prefix in d_prefix.keys():
                 print(">> Undefined prefix '{}'".format(prefix))
                 return false
 
             s=s.replace(prefix, d_prefix[prefix])
             dataLine[i]=s
         i+=1
-    # find if more than one variable in pattern_stack, rearrange stack
+
+    # find if more than one variable in pattern_stack, rearrange to bottom of stack
     num_var = sum(1 for s in dataLine if '?' in s)
     if num_var == 1:
         pattern_list.append({'sub': dataLine[0], 'pred':dataLine[1], 'obj':dataLine[2]})
@@ -156,6 +164,9 @@ def compile_patterns(dataLine):
 
 
 def parse_sparql(file):
+    """
+    Starting point for parsing the sparql query
+    """
 
     while file_lines:
         lin = file_lines.pop(0)
@@ -186,6 +197,9 @@ def parse_sparql(file):
 
 
 def build_query():
+    """
+    Build the query to retrieve from sqlite db using the parsed patterns
+    """
     basequery = 'SELECT * FROM rdf'
     query= ''
     while pattern_list:
@@ -259,7 +273,7 @@ def read_from_db(sqldb):
     what_to_return=variables
     if not variables:
         what_to_return = select.keys();
-    print(what_to_return)
+
 
 
     for r in relation.keys():
@@ -268,13 +282,16 @@ def read_from_db(sqldb):
         if len(vars_in_relation) >= len(what_to_return):
             res = c.execute(relation[r])
             for rows in res:
+                resultrow = []
                 for v in what_to_return:
                     if (not v in r):
                         print(">> Variable not defined in query")
                         return False;
                     i = r.index(v)
-                    print(rows[i], end='  ', flush=True)
-                print() # newline
+                    resultrow.append(rows[i])
+
+                end_result.append(resultrow)
+
             return True
 
 
@@ -283,10 +300,19 @@ def read_from_db(sqldb):
     conn.close()
 
 def print_result():
-    res = list(full_result)
-    for r in res:
-        print(r)
 
+    # Print out the headers
+    what_to_return=variables
+    if not variables:
+        what_to_return = select.keys();
+
+    for w in what_to_return:
+        print(w, end='\t\t\t\t')
+    print()
+
+    # Print out results
+    for row in end_result:
+        print('\t\t'.join(row))
 
 ###### Main ###########################
 if __name__ == "__main__":
@@ -298,8 +324,7 @@ if __name__ == "__main__":
         parse_sparql(filename)
         build_query();
         read_from_db(sqldb)
-        # print_result();
-        #print(sqldb,filename)
+        print_result();
 
     else:
         print("Usage: "+ argv[0] + " <sql-database> <sparql-query>\n")
