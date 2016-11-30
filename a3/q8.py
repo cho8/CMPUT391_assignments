@@ -13,13 +13,21 @@ def parsePrefix(dataLine):
     checks prefix and then parses it before storing it in d_prefix
     """
     dataLine = dataLine.replace(' ', '\t');
-    tag, pref, uri, term= dataLine.split('\t');
+    tag = pref = uri = term = None
+    try:
+        tag, pref, uri, term= dataLine.split('\t');
+    except ValueError:
+        print(">> Invalid prefix format")
+
     # print(tag, pref, iri, term);
     if tag =='@prefix' :
         # check the prefix
         if pref[-1] != ':':
             print(">> Missing colon")
             return False        # Error! Missing Colon
+        if ' ' in uri:
+            print(">> Space in provided prefix URI")
+            return False
         if uri[0]!='<' and uri[-1]!='>':
             print(">> Missing opening and closing '<>'")
             return False
@@ -84,20 +92,20 @@ def parse_rdf(file):
                 if (temp[0] and temp[1] and temp[2]):
                     #print('case 1')
                     flag = temp[2][-1]
-                    curr['sub']=temp[0]
-                    curr['pred']=temp[1]
-                    curr['obj']=temp[2][:-2]
+                    curr['sub']=temp[0].strip('\n<>')
+                    curr['pred']=temp[1].strip('\n<>')
+                    curr['obj']=temp[2][:-2].strip('\n<>')
 
                 elif (flag == ';'):
                     #print('case 2')
                     flag = temp[2][-1]
-                    curr['pred'] = temp[1]
-                    curr['obj'] = temp[2][:-2]
+                    curr['pred'] = temp[1].strip('\n<>')
+                    curr['obj'] = temp[2][:-2].strip('\n<>')
 
                 elif (flag == ','):
                     #print('case 3')
                     flag = temp[2][-1]
-                    curr['obj'] = temp[2][:-2]
+                    curr['obj'] = temp[2][:-2].strip('\n<>')
 
                 else:
                     print("no match", temp,line_number,flag)
@@ -186,12 +194,13 @@ def write_to_db(sqldb):
     """
     conn = sqlite3.connect(sqldb)
     c = conn.cursor()
-    c.execute ('CREATE TABLE rdf (sub TEXT, pred TEXT, obj TEXT)')
+    # c.execute ('CREATE TABLE rdf (sub TEXT, pred TEXT, obj TEXT);')
 
     data = ''
 
     with open('parsed_results.txt', 'r',encoding = 'utf8') as rslt:
         for lin in rslt:
+            lin=lin.strip('\n')
             result = lin.split('\t')
             triple = '(\''+result[0]+'\',\''+result[1]+'\',\''+result[2]+'\')'
             data = data+triple+','

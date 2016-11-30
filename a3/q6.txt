@@ -1,8 +1,8 @@
-create table rdf {
+create table rdf (
 	sub text,
 	pred text,
 	obj text
-}
+);
 
 
 # Our strategy for storing the RDF Graph is to use a single table to store the
