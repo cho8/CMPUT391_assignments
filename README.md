@@ -1,5 +1,10 @@
-# CMPUT 391 Fall 2016
+# CMPUT 391
+## Fall 2016 University of Alberta
 
+Avery Tan
+Christina Ho
+
+This repository contains:
 * Assignment 2 RTrees
 * Assignment 3 SPARQL and RDF
 
